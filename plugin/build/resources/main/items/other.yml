@@ -1,0 +1,19 @@
+helmet-of-darkness:
+  material: "LEATHER_HELMET"
+  name: "Helmet of Darkness"
+  slot: "HEAD"
+  armor-type: "LIGHT"
+  description:
+    - "The helmet of darkness allows one to"
+    - "see into the abyss, granting them some"
+    - "resistances and strength at a cost."
+  rarity: "HEROIC"
+  stats:
+    health: 40
+    armor: 0.75
+    damage: 10
+  color:
+    alpha: 255
+    red: 0
+    blue: 0
+    green: 0

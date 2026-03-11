@@ -1,0 +1,51 @@
+name: RPGFramework
+version: 2.1.1
+main: io.github.math0898.rpgframework.RPGFramework
+api-version: 1.21
+authors: [ Sugaku ]
+description: The main framework plugin used for all of Math0898/Sugaku's RPG plugins.
+prefix: RPG Framework
+load: POSTWORLD
+softdepend:
+  - HolographicDisplays
+  - StackMob
+  - DecentHolograms
+permissions:
+  rpg.*:
+    default: false
+    children:
+      rpg.parties:
+        rpg.parties.maxbypass:
+commands:
+  rpg-editor:
+    description: "Allows players to create items in game using a convenient editor."
+    permission: "rpg.beta"
+  party:
+    description: Lets players join, leave, and manipulate parties.
+    permission: rpg.parties
+  rpg-give:
+    description: "Gives custom rpg items to players."
+    permission: "rpg.admin"
+  reputation:
+    permission: rpg.admin
+  rpg:
+    description: "A root alias for a number of commands."
+    permission: "rpg.player"
+  summonrpg:
+    description: "Summons RPG mobs into the world. Used by admins and for testing."
+    permission: "rpg.admin"
+  classes:
+    description: "Opens a GUI to players to allow them to easily leave and join classes."
+    permission: "rpg.classes"
+  tutorial:
+    description: "Helps explain the unique server mechanics to new players."
+    permission: "rpg.tutorial"
+  updates:
+    description: "A command to help notify players of changes that have occurred to the server."
+    permission: "rpg.updates"
+  rpg-debug:
+    description: "A debugging command used to help debug the complicated RPG plugin."
+    permission: "rpg.admin"
+  artifact:
+    description: "Command for accessing a player's artifact collection."
+    permission: "rpg.artifact"

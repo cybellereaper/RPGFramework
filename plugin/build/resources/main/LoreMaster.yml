@@ -1,0 +1,10 @@
+# The LoreMaster file is used to help define lore keywords and proper nouns. These are then given their proper color in
+# item descriptions automatically.
+Krusk:
+  regex: "Krusk"
+  rarity: "UNCOMMON"
+  replace: "Krusk"
+"Krusk's Mom":
+  regex: "Krusk's Mom"
+  rarity: "HEROIC"
+  replace: "Krusk's Mom"

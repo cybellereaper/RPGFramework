@@ -1,0 +1,126 @@
+index:
+  root: true
+  title: "Index"
+  message:
+    - "- &r/tutorial bosses&7: A basic guide to bosses."
+    - "- &r/tutorial classes&7: An introduction to the classes."
+    - "- &r/tutorial crafting&7: All the added crafting systems."
+    - "- &r/tutorial parties&7: A new way to organize your team."
+  subsections:
+
+bosses:
+  root: true
+  title: "Bosses"
+  message:
+    - "- &aKrusk"
+    - "- &aEiryeras"
+    - "- &9Feyrith"
+  subsections:
+    - "Krusk"
+    - "Eiryeras"
+    - "Feyrith"
+
+Krusk:
+  root: false
+  title: "Krusk"
+  message:
+    - "A general of a time long past."
+    - "Watch out for his lingering soldiers."
+    - "You can obtain his summon item by killing zombies."
+  subsections:
+    # krusk-drops
+
+Feyrith:
+  root: false
+  title: "Feyrith"
+  message:
+    - "An apprentice mage of noble's court."
+    - "A teleporting boss."
+    - "You can obtain his summon item by killing wither skeletons."
+  subsections:
+  # feyrith-drops
+
+Eiryeras:
+  root: false
+  title: "Eiryeras"
+  message:
+    - "A wild hunter of murmured renown."
+    - "An expect at dispatching weakened prey.."
+    - "You can obtain his summon item by killing skeletons."
+  subsections:
+  # eiryeras-drops
+
+Classes:
+  root: true
+  title: "Classes"
+  message:
+    - "- The player may elect to join any single class and switch at any time."
+    - "- Classes can be joined with &r/classes&7."
+    - "- Each class has unique powers, abilities, and equipment requirements."
+    - "- You will also gain an archetype, either &9Caster&7 or &9Fighter&7, which provides more generic bonuses."
+  subsections:
+    - "Assassin"
+    - "Pyromancer"
+    - "Paladin"
+    - "Bard"
+    - "Berserker"
+
+Assassin:
+  root: false
+  title: "Assassin"
+  message:
+    - "- The assassin is a mobile, high damage class that deals bonus damage upon strikes, dodges attacks, and poisons their enemies."
+    - "- Wear &4full leather &7and use a &4ghast tear &7 to access your class passives and abilities."
+  subsections:
+
+Pyromancer:
+  root: false
+  title: "Pyromancer"
+  message:
+    - "- The pyromancer is an offensive caster that shoots fireballs and ignites their enemies."
+    - "- Gear for the pyromancer is quite flexible, any armor can be worn."
+    - "- Use a &4blaze powder &7and &4blaze rod &7to cast your abilities."
+  subsections:
+
+Paladin:
+  root: false
+  title: "Paladin"
+  message:
+    - "- Paladins are the pen ultimate healer class with strong regeneration and health boosting abilities."
+    - "- &4Golden armor &7helps to conduct mana and must be used to cast the paladin's spells."
+    - "- A &4golden shovel &7must be held as well."
+
+Bard:
+  root: false
+  title: "Bard"
+  message:
+    - "- The bard is an aura caster that buffs their allies."
+    - "- Gear for the bard is incredibly flexible, any armor can be worn."
+    - "- Use a &4noteblock &7to cast your abilities."
+  subsections:
+
+Berserker:
+  root: false
+  title: "Berserker"
+  message:
+    - "- The berserker is a brute force fighter that crushes their enemies under an &4axe&7."
+    - "- Wear &leather leggings &7and a &4leather chestplate &7to access your powers."
+    - "- &4Rotten flesh is used to cast your abilities."
+  subsections:
+
+Crafting:
+  root: true
+  title: "Crafting"
+  message:
+    - "- The &dForge &7a reinforced anvil to enchant items to an even greater height. To create, place a netherite block under an anvil."
+  subsections:
+
+Parties:
+  root: true
+  title: "Parties"
+  message:
+    - "- Share your aura and abilities with those around you by creating a party!"
+    - "- Use &r/party invite <username>&7 to get started."
+    - "- Summon your allies to your side with &r/party summon&7."
+    - "- Talk privately with &r/party chat&7."
+  subsections:

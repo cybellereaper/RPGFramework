@@ -1,0 +1,116 @@
+helmet:
+  name: "Light Imbued Dragon-scale Helm"
+  material: "PLAYER_HEAD"
+  slot: "HEAD"
+  rarity: "LEGENDARY"
+  description:
+    - "A helm of dragon scales forged by a"
+    - "legendary dwarven smith and imbued"
+    - "with light given form. Even the"
+    - "strongest of blades easily glance off"
+    - "the durable plate. It's true power can"
+    - "push back any darkness."
+  stats:
+    health: 30
+    armor: 0.75
+  skull:
+    base64: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzM0NTJiOThhYjlhODhkMTc1N2YwMzJjMDcyYWY4MWNmYTM1ZGRiNDc5NDU4NTkxNDc4MTFiY2RjZmQ5ODcxZSJ9fX0="
+chestplate:
+  name: "Chestplate of Compassion"
+  material: "LEATHER_CHESTPLATE"
+  slot: "CHEST"
+  armor-type: "HEAVY"
+  rarity: "UNCOMMON"
+  color:
+    red: 255
+    blue: 194
+    green: 115
+  description:
+    - "Compassion can take many forms. One such"
+    - "form is giving your enemies ample"
+    - "opportunity to declare their final words."
+    - "An instant death can be too sudden even"
+    - "for the most prepared warriors. #23A5DBSeignour#CCCCCC"
+    - "gives everyone time to consider as they"
+    - "receive numerous large, but non-fatal blows."
+  stats:
+    health: 35
+    armor: 2.0
+leggings:
+  name: "Leggings of Faith"
+  material: "GOLDEN_LEGGINGS"
+  slot: "LEGS"
+  armor-type: "HEAVY"
+  rarity: "RARE"
+  description:
+    - "It's a strongly held belief amongst #23A5DBSeignour#CCCCCC's"
+    - "paladin order that strength without prayer"
+    - "is nothing but barbaric brutish-ism. It's"
+    - "the divine that gives purpose to man."
+  stats:
+    health: 32
+    armor: 1.5
+boots:
+  name: "Boots of Brutality"
+  material: "LEATHER_BOOTS"
+  slot: "FEET"
+  armor-type: "HEAVY"
+  rarity: "UNCOMMON"
+  color:
+    alpha: 255
+    red: 255
+    blue: 140
+    green: 64
+  description:
+    - ""
+    - "\"Religious purity must be maintained"
+    - "at any cost. Be prepared to report"
+    - "anyone, even your neighbors, should"
+    - "they commit blasphemy against #D93747Dhubris#CCCCCC."
+    - "A safe world is a world without heretics.\""
+    - ""
+    - " - #23A5DBSeignour#CCCCCC (I4 - Vipls - Uso)"
+  stats:
+    health: 22
+    armor: 0.75
+shield:
+  name: "Wall of Truth"
+  material: "SHIELD"
+  slot: "OFF_HAND"
+  rarity: "COMMON"
+  description:
+    - "What better to hide behind"
+    - "than the notion of *#F3B36Btruth#CCCCCC*?"
+    - "Bonus #3FB74Aarmor #CCCCCCif you can"
+    - "blur the line between fact,"
+    - "fiction, and opinion."
+  stats:
+    health: 25.0
+    armor: 1.0
+    toughness: 1.0
+sword:
+  name: "Justice"
+  material: "WOODEN_SWORD"
+  slot: "HAND"
+  rarity: "UNCOMMON"
+  weapon-type: "SWORD"
+  description:
+    - "#23A5DBSeignour#CCCCCC's most central guiding principal"
+    - "and most treasured companion. This"
+    - "sword has made it through many a fire,"
+    - "and many an enemy. #F454DAKing Kairon #CCCCCCtrusted"
+    - "this blade more than any other to fall"
+    - "upon the kingdom's enemies."
+  stats:
+    attack-speed: -2.2
+    damage: 60
+spawn:
+  name: "Seignour Boss Spawn"
+  material: "BOOK"
+  rarity: "RARE"
+  description:
+    - "Drop this item anywhere to spawn"
+    - "#23A5DBSeignour#CCCCCC, #23A5DBArbiter of Truth #CCCCCCon the spot."
+    - "Attacking bosses whilst they are in"
+    - "water will cause you to get struck"
+    - "by lighting."

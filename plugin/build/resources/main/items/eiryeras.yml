@@ -1,0 +1,149 @@
+spawn:
+  material: "BEEF"
+  name: "Eiryeras Boss Spawn"
+  rarity: "RARE"
+  description:
+    - "Drop this item anywhere to spawn"
+    - "#53C975Eiryeras#CCCCCC, #53C975Honored Hunter #CCCCCCon the"
+    - "spot. Attacking bosses whilst they"
+    - "are in water will cause you to get"
+    - "struck by lighting."
+  slot: "MATERIAL"
+
+hand-crafted-bow: # todo: LORE HELPER!
+  material: "BOW"
+  name: "Hand Crafted Bow"
+  slot: "HAND"
+  weapon-type: "BOW"
+  description:
+    - "A bow crafted by a very"
+    - "experienced artisan from"
+    - "#23A5DBStrathenberg#CCCCCC. The unique"
+    - "Shape of the limbs help"
+    - "transfer more energy into"
+    - "each shot."
+  rarity: "RARE"
+  stats:
+    damage: 20
+
+worn-galoshes:
+  material: "LEATHER_BOOTS"
+  name: "Worn Galoshes"
+  slot: "FEET"
+  armor-type: "LIGHT"
+  description:
+    - "While traveling it is very"
+    - "important to keep your feet"
+    - "dry. Failing to do so can"
+    - "result in fungal infections"
+    - "blisters, and warts. Do"
+    - "yourself a favor and get a"
+    - "good pair of footwear."
+  rarity: "UNCOMMON"
+  stats:
+    health: 10
+    armor: 0.5
+    damage: 5
+  color:
+    red: 60
+    blue: 31
+    green: 115
+
+hide-leggings:
+  material: "LEATHER_LEGGINGS"
+  name: "Hide Leggings"
+  slot: "LEGS"
+  armor-type: "LIGHT"
+  description:
+    - "Woods which do not reside in"
+    - "floodplains often cultivate"
+    - "a large amount of undergrowth"
+    - "which can be thorny and"
+    - "difficult to move through."
+    - "A good pair of protective"
+    - "pants is a good idea."
+  rarity: "UNCOMMON"
+  stats:
+    health: 15
+    armor: 0.75
+    damage: 5
+  color:
+    red: 93
+    blue: 124
+    green: 161
+
+hunters-cloak: # TODO: Lore Helper!
+  material: "LEATHER_CHESTPLATE"
+  name: "Hunter's Cloak"
+  slot: "CHEST"
+  armor-type: "LIGHT"
+  description:
+    - "Similar to hoods, cloaks help"
+    - "greatly to reduce environmental"
+    - "hazards as well as recolor the"
+    - "wearer to match their terrain."
+    - "This particular cloak is"
+    - "specifically colored for the"
+    - "forests of #23A5DBAgloytan#CCCCCC."
+  rarity: "UNCOMMON"
+  stats:
+    health: 20
+    armor: 1.0
+    damage: 5
+  color:
+    red: 113
+    blue: 11
+    green: 172
+
+hunters-hood:
+  material: "LEATHER_HELMET"
+  name: "Hunter's Hood"
+  slot: "HEAD"
+  armor-type: "LIGHT"
+  description:
+    - "Hoods serve to help conceal"
+    - "humanoid features among the"
+    - "trees as well as protect the"
+    - "wearer against most"
+    - "environmental hazards."
+  rarity: "UNCOMMON"
+  stats:
+    health: 10
+    armor: 0.5
+    damage: 5
+  color:
+    red: 60
+    blue: 31
+    green: 115
+
+ceremonial-knife: # todo: LORE HELPER!
+  material: "IRON_SWORD"
+  name: "Ceremonial Knife"
+  rarity: "RARE"
+  slot: "HAND"
+  weapon-type: "DAGGER"
+  description:
+    - "This is a ceremonial knife used"
+    - "by followers of #D93747Inos#CCCCCC, #D93747God of"
+    - "#D93747Spring#CCCCCC. The blade is used when"
+    - "gathering natural resources to"
+    - "show thanks and to humbly ask"
+    - "for its rejuvenation."
+  stats:
+    damage: 50
+
+lore:
+  material: "IRON_SWORD"
+  name: "Eiryeras Lore"
+  rarity: "LEGENDARY"
+  slot: "MATERIAL"
+  description:
+    - "#53C975Eiryeras #CCCCCCfrom a young age has"
+    - "always been very chaotic. Rather"
+    - "than study #53C975Eiryeras #CCCCCCwould much"
+    - "rather spend their time amongst"
+    - "the bugs and birds of the forest."
+    - "#53C975Eiryeras #CCCCCCin old age would often"
+    - "proclaim that the company of"
+    - "animals is far superior to that"
+    - "of man."

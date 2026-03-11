@@ -1,0 +1,105 @@
+spawn:
+  name: "Krusk Boss Spawn"
+  material: "WHEAT"
+  slot: "MATERIAL"
+  rarity: "RARE"
+  description:
+    - "Drop this item anywhere to spawn"
+    - "#53C975Krusk#CCCCCC, #53C975Undead General#CCCCCC on the spot."
+    - "Attacking bosses whilst they are in"
+    - "water will cause you to get struck"
+    - "by lighting."
+
+lore:
+  material: "WHEAT"
+  name: "Krusk's Lore"
+  rarity: "RARE"
+  slot: "ARTIFACT"
+  stats:
+    damage: 10
+  description:
+    - "#53C975Krusk #CCCCCCwas a general for a small"
+    - "time noble named #F454DAKairon. #CCCCCCFor"
+    - "this noble, #53C975Krusk was given the"
+    - "fairly easy task of defending"
+    - "farmers from stray beasts."
+
+krusk-axe:
+  material: "IRON_AXE"
+  name: "Krusk's Axe"
+  rarity: "UNCOMMON"
+  slot: "HAND"
+  weapon-type: "AXE"
+  stats:
+    damage: 60
+    attack-speed: -3.0
+  description:
+    - "During life #53C975Krusk #CCCCCCwas a human general."
+    - "He was not particularly good at what"
+    - "he did but now he gives adventurers"
+    - "a hard time anyways."
+
+krusk-boots:
+  material: "DIAMOND_BOOTS"
+  name: "Krusk's Boots"
+  rarity: "UNCOMMON"
+  slot: "FEET"
+  armor-type: "MEDIUM"
+  stats:
+    health: 60
+    armor: 1.0
+    toughness: 2.0
+  description:
+    - "These boots were given to #53C975Krusk"
+    - "by #F454DAKrusk's Mom #CCCCCCto celebrate his"
+    - "promotion to general. Wear them"
+    - "well."
+
+krusk-helmet:
+  material: "DIAMOND_HELMET"
+  name: "Krusk's Trusty Helmet"
+  rarity: "RARE"
+  slot: "HEAD"
+  armor-type: "MEDIUM"
+  stats:
+    health: 90
+    armor: 1.25
+    toughness: 2.25
+  description:
+    - "This is #53C975Krusk's #CCCCCChelmet from life. It"
+    - "was his good luck charm. If only he"
+    - "was wearing it that fateful day..."
+    - "maybe... #53C975Krusk #CCCCCCwould've lived long"
+    - "enough to save enough pevsar to"
+    - "buy his own house."
+
+krusk-leggings:
+  material: "LEATHER_LEGGINGS"
+  name: "Krusk's Leggings"
+  rarity: "UNCOMMON"
+  slot: "LEGS"
+  armor-type: "LIGHT"
+  stats:
+    health: 25
+    armor: 0.75
+  description:
+    - "#53C975Krusk's #CCCCCChas always been very keen"
+    - "on staying flexible. Leather pants"
+    - "suited this goal nicely allowing him"
+    - "to practice stretches on the job."
+
+undead-chestplate:
+  material: "IRON_CHESTPLATE"
+  name: "Undead Chestplate"
+  rarity: "UNCOMMON"
+  slot: "CHEST"
+  armor-type: "MEDIUM"
+  stats:
+    health: 50
+    armor: 1.75
+  description:
+    - "This chestplate, forged from iron,"
+    - "will defend the user against most"
+    - "attacks they may face."
+    - "§nIssue Date:"
+    - "               I5 - Pretits - Ve"

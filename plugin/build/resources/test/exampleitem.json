@@ -1,0 +1,41 @@
+{
+  "name": "&7&lThis Item Has a Really Cool Name",
+  "internal_name": "simpleCamlCaseName",
+  "lore": "&7Lore should be able to be really long and then automatically indented at the correct position based on a configuration option.",
+  "material": "DIAMOND_HELMET",
+  "custom_model_data": "0",
+  "unbreakable": "true",
+  "item_flags": [
+    "HIDE_UNBREAKABLE"
+  ],
+  "enchants": [
+    {
+      "enchantment": "FIRE_ASPECT",
+      "level": "3"
+    },
+    {
+      "enchantment": "SHARPNESS",
+      "level": "10"
+    }
+  ],
+  "attributes": [
+    {
+      "attribute": "GENERIC_ARMOR",
+      "modifier": {
+        "name": "armoredBoyHelmet",
+        "amount": "23.0",
+        "operation": "ADD_NUMBER",
+        "slot": "HEAD"
+      }
+    },
+    {
+      "attribute": "GENERIC_MAX_HEALTH",
+      "modifier": {
+        "name": "healthyBoyHelmet",
+        "amount": "3.0",
+        "operation": "ADD_SCALAR",
+        "slot": "HEAD"
+      }
+    }
+  ]
+}

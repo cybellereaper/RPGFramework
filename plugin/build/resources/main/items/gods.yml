@@ -1,0 +1,12 @@
+inos-aspect-I:
+  name: "Aspect of Inos I"
+  material: "FEATHER"
+  slot: "ARTIFACT"
+  rarity: "MYTHIC"
+  description:
+    - "Obtained from a close encounter"
+    - "with #D93747Inos#CCCCCC, #D93747God of Spring#CCCCCC. This"
+    - "fragment still contains vast"
+    - "amounts of the god's magic."
+  stats:
+    health: 100

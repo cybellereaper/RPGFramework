@@ -1,0 +1,241 @@
+spawn:
+  material: "GOLD_INGOT"
+  slot: "MATERIAL"
+  name: "Feyrith Boss Spawn"
+  rarity: "RARE"
+  description:
+    - "Drop this item anywhere to spawn"
+    - "#23A5DBFeyrith#CCCCCC, #23A5DBApprentice Mage #CCCCCCon the spot."
+    - "Attacking bosses whilst they are in"
+    - "water will cause you to get struck"
+    - "by lighting."
+
+fire-gemstone:
+  material: "DIAMOND"
+  slot: "OFF_HAND"
+  name: "Fire Gemstone"
+  rarity: "UNCOMMON"
+  custom-model-data: "1"
+  stats:
+    damage: 25
+    attack-speed: 0.25 # +25 magic power.
+  description:
+    - "A gemstone that radiates"
+    - "uncomfortable warmth. The"
+    - "§bmana #CCCCCCwithin flows out and"
+    - "into your body. Perhaps this"
+    - "was what allowed such an"
+    - "inexperienced mage as #23A5DBFeyrith"
+    - "to manipulate fire."
+
+sylvathian-thorn-weaver:
+  type: EMERALD
+  amount: 1
+  meta:
+    meta-type: UNSPECIFIC
+    display-name: §9Sylvathian Thornweaver
+    custom-model-data: 1
+    lore:
+      - §7A simplistic artifact imbued
+      - §7with the magics of a young
+      - §6Sylvathian §7to ensnare the
+      - §7unsuspecting. After some
+      - §7tweaks it now makes for an
+      - §7effective defensive aura.
+      - ""
+      - "§9Aura of Thorns §7(Active): "
+      - "§7Summons thorns surrounding"
+      - "§7the player to damage foes."
+      - "§9Cooldown: 60s"
+      - "§9Duration: 10s"
+      - "§9Damage: 10/s"
+      - "§9Range: 4 blocks"
+
+wrath-of-feyrith:
+  type: PRISMARINE_SHARD
+  amount: 1
+  meta:
+    meta-type: UNSPECIFIC
+    display-name: §9Wrath of Feyrith
+    custom-model-data: 1
+    lore:
+      - §7The one magic §9Feyrith
+      - §7was proficient in was lightning.
+      - §7A fragment of his electric
+      - §7wrath still lingers inside this
+      - §7gemstone.
+      - ""
+      - "§9Feyrith's Wrath §7(Active): "
+      - "§7Strikes nearby foes with"
+      - "§7lightning."
+      - "§9Cooldown: 60s"
+      - "§9Damage: 100"
+      - "§9Range: 8 blocks"
+
+mage-kaftan:
+  type: DIAMOND_CHESTPLATE
+  amount: 1
+  meta:
+    Unbreakable: true
+    meta-type: UNSPECIFIC
+    display-name: §9Mage's Kaftan
+    lore:
+      - §7A simple piece of formal
+      - §7wear that increases a
+      - §7mage's ability to channel
+      - §7magics.
+      - ""
+      - "§7Chest:"
+      - §9+175 Health
+      - §9+2 Armor
+      - §9+2 Armor Toughness
+      - §9+10 Magic Power
+    ItemFlags:
+      - HIDE_ATTRIBUTES
+      - HIDE_UNBREAKABLE
+    attribute-modifiers:
+      GENERIC_ARMOR_TOUGHNESS:
+          amount: 2.0
+          name: generic.armorToughness
+          slot: CHEST
+          uuid: 00000000-0000-0003-0000-000000000003
+          operation: 0
+      GENERIC_ARMOR:
+          amount: 2.0
+          name: generic.armor
+          slot: CHEST
+          uuid: 00000000-0000-0003-0000-000000000002
+          operation: 0
+      GENERIC_MAX_HEALTH:
+          amount: 35
+          name: generic.health
+          slot: CHEST
+          uuid: 00000000-0000-0003-0000-000000000001
+          operation: 0
+
+royal-clogs:
+  type: DIAMOND_BOOTS
+  amount: 1
+  meta:
+    Unbreakable: true
+    meta-type: UNSPECIFIC
+    display-name: §dBalkan Clogs
+    lore:
+      - §7These clogs are from a
+      - §7land far far away. Untainted
+      - §7by §bmana§7.
+      - ""
+      - "§7Feet:"
+      - §9+125 Health
+      - §9+1 Armor
+      - §9+2 Armor Toughness
+    ItemFlags:
+      - HIDE_ATTRIBUTES
+      - HIDE_UNBREAKABLE
+    attribute-modifiers:
+      GENERIC_ARMOR_TOUGHNESS:
+          amount: 2.0
+          name: generic.armorToughness
+          slot: FEET
+          uuid: 00000000-0000-0001-0000-000000000003
+          operation: 0
+      GENERIC_ARMOR:
+          amount: 1.0
+          name: generic.armor
+          slot: FEET
+          uuid: 00000000-0000-0001-0000-000000000002
+          operation: 0
+      GENERIC_MAX_HEALTH:
+          amount: 25
+          name: generic.health
+          slot: FEET
+          uuid: 00000000-0000-0001-0000-000000000001
+          operation: 0
+
+visionary-coif:
+  type: DIAMOND_HELMET
+  amount: 1
+  meta:
+    Unbreakable: true
+    meta-type: UNSPECIFIC
+    display-name: §aCoif of Visions
+    lore:
+      - §7A Coif said to give the user
+      - §7visions of the near future.
+      - §7Later investigations would
+      - §7suggest this just a clever
+      - §7marketing ploy.
+      - ""
+      - "§7Head:"
+      - §9+60 Health
+      - §9+1.25 Armor
+      - §9+2 Armor Toughness
+      - §9+2 Magic Power
+    ItemFlags:
+      - HIDE_ATTRIBUTES
+      - HIDE_UNBREAKABLE
+    attribute-modifiers:
+      GENERIC_ARMOR_TOUGHNESS:
+          amount: 2.0
+          name: generic.armorToughness
+          slot: HEAD
+          uuid: 00000000-0000-0004-0000-000000000003
+          operation: 0
+      GENERIC_ARMOR:
+          amount: 1.25
+          name: generic.armor
+          slot: HEAD
+          uuid: 00000000-0000-0004-0000-000000000002
+          operation: 0
+      GENERIC_MAX_HEALTH:
+          amount: 12
+          name: generic.health
+          slot: HEAD
+          uuid: 00000000-0000-0004-0000-000000000001
+          operation: 0
+
+comfortable-breeches:
+  type: DIAMOND_LEGGINGS
+  amount: 1
+  meta:
+    Unbreakable: true
+    meta-type: UNSPECIFIC
+    display-name: §9Comfortable Breeches
+    lore:
+      - §7An incredibly popular choice
+      - §7among servants of §dKairon.
+      - §7Their price however frequently
+      - §7put them out of reach of
+      - §7commoners. Still comfortable
+      - §7after all these years.
+      - ""
+      - "§7Legs:"
+      - §9+100 Health
+      - §9+1.5 Armor
+      - §9+2 Armor Toughness
+      - §9+5 Magic Power
+    ItemFlags:
+      - HIDE_ATTRIBUTES
+      - HIDE_UNBREAKABLE
+    attribute-modifiers:
+      GENERIC_ARMOR_TOUGHNESS:
+          amount: 2.0
+          name: generic.armorToughness
+          slot: LEGS
+          uuid: 00000000-0000-0002-0000-000000000003
+          operation: 0
+      GENERIC_ARMOR:
+          amount: 1.5
+          name: generic.armor
+          slot: LEGS
+          uuid: 00000000-0000-0002-0000-000000000002
+          operation: 0
+      GENERIC_MAX_HEALTH:
+          amount: 20
+          name: generic.health
+          slot: LEGS
+          uuid: 00000000-0000-0002-0000-000000000001
+          operation: 0
+
+lore:
+  type: GOLD_INGOT
