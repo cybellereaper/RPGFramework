@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FeyrithBrainTest {
@@ -63,5 +64,36 @@ class FeyrithBrainTest {
         assertEquals(-8, maximum);
         assertTrue(Math.abs(FeyrithBrain.computeOffset(0.42, true)) >= 3);
         assertTrue(Math.abs(FeyrithBrain.computeOffset(0.42, true)) <= 8);
+    }
+
+    @Test
+    void circlePointsStayOnRequestedRadius() {
+        FeyrithBrain.Point center = new FeyrithBrain.Point(12.0, 70.0, -4.0);
+        List<FeyrithBrain.Point> points = FeyrithBrain.circlePoints(center, 2.5, 12);
+
+        assertEquals(12, points.size());
+        for (FeyrithBrain.Point point : points) {
+            double distanceSquared = center.distanceSquared(new FeyrithBrain.Point(point.x(), center.y(), point.z()));
+            assertEquals(2.5 * 2.5, distanceSquared, 0.000001);
+            assertEquals(center.y(), point.y());
+        }
+    }
+
+    @Test
+    void withinCircleUsesHorizontalDistance() {
+        FeyrithBrain.Point center = new FeyrithBrain.Point(0.0, 64.0, 0.0);
+
+        assertTrue(FeyrithBrain.isWithinCircle(center, new FeyrithBrain.Point(1.0, 80.0, 1.0), 1.5));
+        assertFalse(FeyrithBrain.isWithinCircle(center, new FeyrithBrain.Point(2.0, 64.0, 2.0), 2.0));
+    }
+
+    @Test
+    void withinConeAcceptsTargetsInFrontAndRejectsSideTargets() {
+        FeyrithBrain.Point origin = new FeyrithBrain.Point(0.0, 64.0, 0.0);
+        FeyrithBrain.Point aim = new FeyrithBrain.Point(0.0, 64.0, 8.0);
+
+        assertTrue(FeyrithBrain.isWithinCone(origin, aim, new FeyrithBrain.Point(0.5, 64.0, 5.0), 8.0, 30.0));
+        assertFalse(FeyrithBrain.isWithinCone(origin, aim, new FeyrithBrain.Point(4.5, 64.0, 4.5), 8.0, 30.0));
+        assertFalse(FeyrithBrain.isWithinCone(origin, aim, new FeyrithBrain.Point(0.0, 64.0, 9.0), 8.0, 30.0));
     }
 }

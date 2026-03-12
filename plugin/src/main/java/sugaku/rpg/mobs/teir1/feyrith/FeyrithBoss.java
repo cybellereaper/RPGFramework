@@ -5,6 +5,7 @@ import io.github.math0898.rpgframework.items.ItemManager;
 import io.github.math0898.utils.Utils;
 import io.github.math0898.utils.items.ItemBuilder;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -14,17 +15,13 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -35,7 +32,6 @@ import sugaku.rpg.framework.items.Rarity;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -45,22 +41,32 @@ import static org.bukkit.Material.COAL;
 public class FeyrithBoss extends CustomMob implements Listener {
 
     private static final String NAME = "Feyrith, Apprentice Mage";
-    private static final String PROJECTILE_METADATA_KEY = "feyrith";
     private static final int MAX_HEALTH = 350;
     private static final double BASE_DAMAGE = 50.0;
     private static final double LIGHTNING_DAMAGE = 1.25 * BASE_DAMAGE / 5.0;
     private static final double WAVE_DAMAGE = BASE_DAMAGE / 5.0;
-    private static final double FIREBALL_DAMAGE = BASE_DAMAGE / 5.0;
+    private static final double CONE_DAMAGE = 1.35 * BASE_DAMAGE / 5.0;
     private static final double PLAYER_SEARCH_RADIUS_XZ = 12.0;
     private static final double PLAYER_SEARCH_RADIUS_Y = 6.0;
     private static final int AI_INTERVAL_TICKS = 4 * 20;
     private static final int LIGHTNING_DELAY_TICKS = 2 * 20;
-    private static final int FIREBALL_VOLLEY_DELAY_TICKS = 6;
     private static final int WAVE_STEP_TICKS = 5;
     private static final int WAVE_DURATION_TICKS = 4 * 20;
     private static final int WAVE_DAMAGE_INTERVAL_TICKS = 20;
     private static final int WAVE_SOUND_INTERVAL_TICKS = 10;
-    private static final double FIREBALL_SPEED = 0.65;
+    private static final double LIGHTNING_RADIUS = 1.75;
+    private static final int LIGHTNING_MARKER_POINTS = 18;
+    private static final int LIGHTNING_BEAM_HEIGHT = 6;
+    private static final double WAVE_RADIUS = 4.5;
+    private static final int WAVE_RING_POINTS = 28;
+    private static final int WAVE_FILL_POINTS = 16;
+    private static final double CONE_RANGE = 9.0;
+    private static final double CONE_HALF_ANGLE_DEGREES = 28.0;
+    private static final int CONE_PULSES = 3;
+    private static final int CONE_PULSE_DELAY_TICKS = 6;
+    private static final double CONE_STEP_DISTANCE = 1.2;
+    private static final int CONE_STEPS = 8;
+    private static final int CONE_ARC_POINTS = 7;
 
     private static final BossDrop[] bossDrops = new BossDrop[]{
             new BossDrop(ItemManager.getInstance().getItem("feyrith:SylvathianThornWeaver"), Rarity.RARE),
@@ -169,7 +175,7 @@ public class FeyrithBoss extends CustomMob implements Listener {
         switch (plan.attack()) {
             case LIGHTNING -> lightningAttack(entity, players);
             case WAVE -> waveAttack(entity);
-            case FIREBALL -> fireballAttack(entity, players);
+            case FIREBALL -> coneAttack(entity, players, plan.anchor());
         }
     }
 
@@ -177,26 +183,48 @@ public class FeyrithBoss extends CustomMob implements Listener {
         dyeArmor(25, 64, 255, 0.75, 1.0, 0.5);
 
         for (Player player : players) {
-            particlesVert(Particle.FALLING_WATER, player.getLocation(), 30, 5);
-            UUID playerId = player.getUniqueId();
-            Bukkit.getScheduler().runTaskLater(plugin(), () -> strikeTrackedPlayer(entity, playerId), LIGHTNING_DELAY_TICKS);
+            Location target = player.getLocation().clone();
+            telegraphLightning(target);
+            Bukkit.getScheduler().runTaskLater(plugin(), () -> resolveLightning(entity, target), LIGHTNING_DELAY_TICKS);
         }
     }
 
-    private void strikeTrackedPlayer(LivingEntity caster, UUID playerId) {
+    private void telegraphLightning(Location target) {
+        spawnVerticalBeam(target, Particle.FALLING_WATER, LIGHTNING_BEAM_HEIGHT, 32);
+        spawnCircle(
+                target,
+                LIGHTNING_RADIUS,
+                LIGHTNING_MARKER_POINTS,
+                Particle.DUST,
+                new Particle.DustOptions(Color.fromRGB(80, 170, 255), 1.25f)
+        );
+    }
+
+    private void resolveLightning(LivingEntity caster, Location strikeLocation) {
         if (!isActive(caster)) {
             return;
         }
-
-        Player player = Bukkit.getPlayer(playerId);
-        if (player == null || player.isDead() || !player.isValid()) {
+        World world = strikeLocation.getWorld();
+        if (world == null) {
             return;
         }
 
-        World world = player.getWorld();
-        Location strikeLocation = player.getLocation();
+        spawnVerticalBeam(strikeLocation, Particle.ELECTRIC_SPARK, LIGHTNING_BEAM_HEIGHT, 24);
+        spawnCircle(
+                strikeLocation,
+                LIGHTNING_RADIUS,
+                LIGHTNING_MARKER_POINTS,
+                Particle.DUST,
+                new Particle.DustOptions(Color.fromRGB(160, 220, 255), 1.4f)
+        );
         world.strikeLightningEffect(strikeLocation);
-        player.damage(LIGHTNING_DAMAGE, caster);
+        world.playSound(strikeLocation, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.5f, 1.1f);
+        for (Player player : findNearbyPlayers(caster)) {
+            if (Objects.equals(player.getWorld(), world)
+                    && FeyrithBrain.isWithinCircle(toPoint(strikeLocation), toPoint(player.getLocation()), LIGHTNING_RADIUS)) {
+                player.damage(LIGHTNING_DAMAGE, caster);
+            }
+        }
     }
 
     private void waveAttack(LivingEntity entity) {
@@ -220,9 +248,10 @@ public class FeyrithBoss extends CustomMob implements Listener {
                 spawnWaveParticles(location);
 
                 if (elapsedTicks % WAVE_DAMAGE_INTERVAL_TICKS == 0) {
-                    entity.getNearbyEntities(4.5, 4.0, 4.5).stream()
+                    entity.getNearbyEntities(WAVE_RADIUS, 4.0, WAVE_RADIUS).stream()
                             .filter(Player.class::isInstance)
                             .map(Player.class::cast)
+                            .filter(player -> FeyrithBrain.isWithinCircle(toPoint(location), toPoint(player.getLocation()), WAVE_RADIUS))
                             .forEach(player -> player.damage(WAVE_DAMAGE, entity));
                 }
 
@@ -234,39 +263,41 @@ public class FeyrithBoss extends CustomMob implements Listener {
         }.runTaskTimer(plugin(), 0L, WAVE_STEP_TICKS);
     }
 
-    private void fireballAttack(LivingEntity entity, Collection<Player> players) {
+    private void coneAttack(LivingEntity entity, Collection<Player> players, FeyrithBrain.Point anchor) {
         dyeArmor(255, 64, 25, 1.0, 0.75, 0.5);
 
-        int volleys = phase >= 3 ? 2 : 1;
-        for (Player player : players) {
-            UUID playerId = player.getUniqueId();
-            for (int volley = 0; volley < volleys; volley++) {
-                long delay = (long) volley * FIREBALL_VOLLEY_DELAY_TICKS;
-                Bukkit.getScheduler().runTaskLater(plugin(), () -> launchFireball(entity, playerId), delay);
-            }
+        if (players.isEmpty()) {
+            return;
+        }
+        int pulses = phase >= 3 ? CONE_PULSES + 1 : CONE_PULSES;
+        for (int pulse = 0; pulse < pulses; pulse++) {
+            Bukkit.getScheduler().runTaskLater(plugin(), () -> resolveConePulse(entity, players, anchor), (long) pulse * CONE_PULSE_DELAY_TICKS);
         }
     }
 
-    private void launchFireball(LivingEntity caster, UUID playerId) {
+    private void resolveConePulse(LivingEntity caster, Collection<Player> players, FeyrithBrain.Point anchor) {
         if (!isActive(caster)) {
             return;
         }
 
-        Player player = Bukkit.getPlayer(playerId);
-        if (player == null || player.isDead() || !player.isValid() || !Objects.equals(player.getWorld(), caster.getWorld())) {
-            return;
+        Location origin = caster.getEyeLocation();
+        spawnConeParticles(origin, anchor);
+        World world = origin.getWorld();
+        if (world != null) {
+            world.playSound(origin, Sound.ITEM_FIRECHARGE_USE, 1.2f, 0.85f);
         }
 
-        Vector direction = player.getEyeLocation().toVector().subtract(caster.getEyeLocation().toVector());
-        if (direction.lengthSquared() == 0.0) {
-            return;
+        FeyrithBrain.Point originPoint = toPoint(origin);
+        for (Player player : players) {
+            if (player.isDead() || !player.isValid() || !Objects.equals(player.getWorld(), caster.getWorld())) {
+                continue;
+            }
+            FeyrithBrain.Point target = toPoint(player.getLocation());
+            if (FeyrithBrain.isWithinCone(originPoint, anchor, target, CONE_RANGE, CONE_HALF_ANGLE_DEGREES)) {
+                player.setFireTicks(Math.max(player.getFireTicks(), 60));
+                player.damage(CONE_DAMAGE, caster);
+            }
         }
-
-        Fireball fireball = caster.launchProjectile(Fireball.class, direction.normalize().multiply(FIREBALL_SPEED));
-        fireball.setGravity(false);
-        fireball.setYield(0.0f);
-        fireball.setIsIncendiary(false);
-        fireball.setMetadata(PROJECTILE_METADATA_KEY, new FixedMetadataValue(plugin(), true));
     }
 
     private void teleport(LivingEntity entity, FeyrithBrain.Plan plan) {
@@ -278,8 +309,8 @@ public class FeyrithBoss extends CustomMob implements Listener {
 
         Location targetLocation = resolveTeleportLocation(world, plan, originalLocation.getY());
         entity.teleport(targetLocation);
-        particlesVert(Particle.PORTAL, originalLocation, 20, 4);
-        particlesVert(Particle.PORTAL, targetLocation, 20, 4);
+        spawnVerticalBeam(originalLocation, Particle.PORTAL, 4, 20);
+        spawnVerticalBeam(targetLocation, Particle.PORTAL, 4, 20);
     }
 
     private Location resolveTeleportLocation(World world, FeyrithBrain.Plan plan, double fallbackY) {
@@ -314,7 +345,7 @@ public class FeyrithBoss extends CustomMob implements Listener {
                 .toList();
     }
 
-    private void particlesVert(Particle particle, Location location, int count, int height) {
+    private void spawnVerticalBeam(Location location, Particle particle, int height, int count) {
         World world = location.getWorld();
         if (world == null) {
             return;
@@ -333,18 +364,62 @@ public class FeyrithBoss extends CustomMob implements Listener {
         }
 
         ThreadLocalRandom random = ThreadLocalRandom.current();
-        for (int i = 0; i < 20; i++) {
+        spawnCircle(location, WAVE_RADIUS, WAVE_RING_POINTS, Particle.HAPPY_VILLAGER, null);
+        for (int i = 0; i < WAVE_FILL_POINTS; i++) {
+            double angle = random.nextDouble(0.0, Math.PI * 2.0);
+            double radius = Math.sqrt(random.nextDouble()) * WAVE_RADIUS;
             world.spawnParticle(
                     Particle.HAPPY_VILLAGER,
-                    location.getX() + random.nextDouble(-4.0, 4.0),
-                    location.getY() + random.nextDouble(-1.0, 1.0),
-                    location.getZ() + random.nextDouble(-4.0, 4.0),
+                    location.getX() + Math.cos(angle) * radius,
+                    location.getY() + random.nextDouble(-0.25, 0.75),
+                    location.getZ() + Math.sin(angle) * radius,
                     1,
                     0.0,
                     0.0,
                     0.0,
                     0.0
             );
+        }
+    }
+
+    private void spawnCircle(Location center, double radius, int samples, Particle particle, Particle.DustOptions dustOptions) {
+        World world = center.getWorld();
+        if (world == null) {
+            return;
+        }
+
+        for (FeyrithBrain.Point point : FeyrithBrain.circlePoints(toPoint(center), radius, samples)) {
+            if (dustOptions == null) {
+                world.spawnParticle(particle, point.x(), center.getY() + 0.1, point.z(), 1, 0.0, 0.0, 0.0, 0.0);
+            } else {
+                world.spawnParticle(particle, point.x(), center.getY() + 0.1, point.z(), 1, 0.0, 0.0, 0.0, 0.0, dustOptions);
+            }
+        }
+    }
+
+    private void spawnConeParticles(Location origin, FeyrithBrain.Point anchor) {
+        World world = origin.getWorld();
+        if (world == null) {
+            return;
+        }
+
+        Vector direction = new Vector(anchor.x() - origin.getX(), 0.0, anchor.z() - origin.getZ());
+        if (direction.lengthSquared() == 0.0) {
+            return;
+        }
+        direction.normalize();
+        Vector perpendicular = new Vector(-direction.getZ(), 0.0, direction.getX());
+
+        for (int step = 1; step <= CONE_STEPS; step++) {
+            double distance = step * CONE_STEP_DISTANCE;
+            double halfWidth = Math.tan(Math.toRadians(CONE_HALF_ANGLE_DEGREES)) * distance;
+            Location stepCenter = origin.clone().add(direction.clone().multiply(distance));
+            for (int point = -CONE_ARC_POINTS; point <= CONE_ARC_POINTS; point++) {
+                double interpolation = point / (double) CONE_ARC_POINTS;
+                Location sample = stepCenter.clone().add(perpendicular.clone().multiply(halfWidth * interpolation));
+                world.spawnParticle(Particle.FLAME, sample, 1, 0.05, 0.05, 0.05, 0.0);
+                world.spawnParticle(Particle.SMALL_FLAME, sample, 1, 0.05, 0.05, 0.05, 0.0);
+            }
         }
     }
 
@@ -404,21 +479,6 @@ public class FeyrithBoss extends CustomMob implements Listener {
 
     public static String getName() {
         return NAME;
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public static void EntityHit(EntityDamageByEntityEvent event) {
-        if (!(event.getEntity() instanceof Player player)) {
-            return;
-        }
-
-        if (!(event.getDamager() instanceof Fireball fireball) || !fireball.hasMetadata(PROJECTILE_METADATA_KEY)) {
-            return;
-        }
-
-        player.setFireTicks(40);
-        event.setDamage(FIREBALL_DAMAGE);
-        fireball.remove();
     }
 
     @EventHandler
