@@ -12,7 +12,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 
 /**
  * This is an active instance of the CustomMobEntry.
@@ -103,16 +102,6 @@ public class ActiveCustomMob implements DamageModifier, Listener {
      */
     @Override
     public void attack (AdvancedDamageEvent event) {
-
-    }
-
-    @Override
-    public void damaged (EntityDamageEvent event) {
-
-    }
-
-    @Override
-    public void attack (EntityDamageByEntityEvent event) {
 
     }
 
