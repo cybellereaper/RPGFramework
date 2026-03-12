@@ -29,7 +29,7 @@ repositories {
 
 dependencies {
     compileOnly "org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT"
-    testCompileOnly "org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT"
+    testImplementation "org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT"
     testImplementation "org.junit.jupiter:junit-jupiter:5.9.0"
     compileOnly "com.gmail.filoghost.holographicdisplays:holographicdisplays-api:2.4.0"
     compileOnly 'com.github.decentsoftware-eu:decentholograms:2.8.9'
