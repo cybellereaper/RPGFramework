@@ -1,7 +1,6 @@
 package io.github.math0898.rpgframework.commands;
 
 import io.github.math0898.rpgframework.enemies.CustomMobEntry;
-import io.github.math0898.rpgframework.enemies.instances.SeignourBoss;
 import io.github.math0898.utils.commands.BetterCommand;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;

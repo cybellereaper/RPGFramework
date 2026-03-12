@@ -165,6 +165,7 @@ public abstract class AbstractClass implements Class, Listener {
             switch (event.getAction()) {
                 case RIGHT_CLICK_BLOCK, RIGHT_CLICK_AIR -> onRightClickCast(event, type);
                 case LEFT_CLICK_AIR, LEFT_CLICK_BLOCK -> onLeftClickCast(event, type);
+                default -> throw new IllegalArgumentException("Unexpected value: " + event.getAction());
             }
     }
 

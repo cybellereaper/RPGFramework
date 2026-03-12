@@ -15,7 +15,6 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import sugaku.rpg.framework.items.BossDrop;
 import sugaku.rpg.framework.items.Rarity;
-import sugaku.rpg.framework.mobs.MobManager;
 import io.github.math0898.rpgframework.PlayerManager;
 import io.github.math0898.rpgframework.RpgPlayer;
 
@@ -249,7 +248,7 @@ public abstract class CustomMob {
     public static void handleDrops (EntityDeathEvent event, BossDrop[] bossDrops, Rarity rarity) {
         event.getDrops().clear();
         event.setDroppedExp(0);
-        event.setDroppedExp(25 * rarity.toInt(rarity));
+        event.setDroppedExp(25 * rarity.ordinal());
         for (Player p : Bukkit.getOnlinePlayers()) {
             RpgPlayer player = PlayerManager.getPlayer(p.getUniqueId());
             if (player == null) continue;
@@ -290,11 +289,11 @@ public abstract class CustomMob {
 //            default:
                 return switch (item) {
                     case COMMON -> 0.16;
-                    case UNCOMMON -> 0.08;
+                    case UNIQUE -> 0.08;
                     case RARE -> 0.04;
                     case LEGENDARY -> 0.02;
-                    case HEROIC -> 0.01;
-                    case MYTHIC -> 0.005;
+                    case MYTHIC -> 0.01;
+                    case RELIC -> 0.005;
                 };
 //            case RARE:
 //                return switch (item) {

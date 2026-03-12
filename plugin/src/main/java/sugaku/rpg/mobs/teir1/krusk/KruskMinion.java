@@ -36,7 +36,7 @@ public class KruskMinion extends CustomMob {
      * @param i The index of the Krusk minion we should spawn at the given location.
      */
     public KruskMinion(Location l, int i) {
-        super(names[i] + ", Underling of Krusk", EntityType.ZOMBIE, Rarity.UNCOMMON, 40);
+        super(names[i] + ", Underling of Krusk", EntityType.ZOMBIE, Rarity.UNIQUE, 40);
         ItemBuilder main = new ItemBuilder(weapons[i]).setUnbreakable(true);
         ItemBuilder boots = new ItemBuilder(Material.LEATHER_BOOTS).setUnbreakable(true);
         ItemBuilder leggings = new ItemBuilder(Material.NETHERITE_LEGGINGS).setUnbreakable(true);

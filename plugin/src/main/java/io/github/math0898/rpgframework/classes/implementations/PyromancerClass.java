@@ -88,6 +88,7 @@ public class PyromancerClass extends AbstractClass {
         switch (type) {
             case BLAZE_POWDER -> castScorch();
             case BLAZE_ROD -> castFlareVolley();
+            default -> throw new IllegalArgumentException("Unexpected value: " + type);
         }
     }
 
@@ -102,6 +103,7 @@ public class PyromancerClass extends AbstractClass {
         switch (type) {
             case BLAZE_POWDER -> castKindle();
             case BLAZE_ROD -> castCauterize();
+            default -> throw new IllegalArgumentException("Unexpected value: " + type);
         }
     }
 

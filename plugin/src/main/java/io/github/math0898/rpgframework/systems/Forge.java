@@ -62,6 +62,8 @@ public class Forge {
             case RED_STAINED_GLASS_PANE, LIME_STAINED_GLASS_PANE:
                 toReturn.add(forge.getItem(11));
                 toReturn.add(forge.getItem(15));
+            default:
+                break;
         }
         for (ItemStack i : toReturn)
             if (i != null) {
@@ -145,6 +147,8 @@ public class Forge {
             case DIAMOND_AXE: case NETHERITE_AXE:
                 legal.add(IMPALING);
                 break;
+            default:
+                break;
         }
         //Sword Enchants
         switch(item.getType()) {
@@ -161,6 +165,8 @@ public class Forge {
                 legal.add(UNBREAKING);
                 legal.add(VANISHING_CURSE);
                 break;
+            default:
+                break;
         }
         //Armor enchants
         switch(item.getType()) {
@@ -171,6 +177,7 @@ public class Forge {
                     NETHERITE_CHESTPLATE, NETHERITE_HELMET ->
                     legal.addAll(Arrays.asList( PROTECTION, FIRE_PROTECTION, PROJECTILE_PROTECTION,
                             BLAST_PROTECTION, MENDING, VANISHING_CURSE, UNBREAKING));
+            default -> throw new IllegalArgumentException("Unexpected value: " + item.getType());
 
         }
         if (legal.isEmpty()) return false;

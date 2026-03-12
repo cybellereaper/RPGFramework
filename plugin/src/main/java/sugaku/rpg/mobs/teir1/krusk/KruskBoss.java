@@ -34,7 +34,7 @@ public class KruskBoss extends CustomMob {
      * A constructor for Krusk the Boss.
      */
     public KruskBoss() {
-        super(name, ZOMBIE, Rarity.UNCOMMON, 250);
+        super(name, ZOMBIE, Rarity.UNIQUE, 250);
         init();
         setArmor(this.helm, this.chestplate, this.leggings, this.boots);
         setHand(getWeapon());

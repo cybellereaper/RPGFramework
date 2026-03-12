@@ -29,11 +29,16 @@ repositories {
 
 dependencies {
     compileOnly "org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT"
+    testCompileOnly "org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT"
     testImplementation "org.junit.jupiter:junit-jupiter:5.9.0"
     compileOnly "com.gmail.filoghost.holographicdisplays:holographicdisplays-api:2.4.0"
     compileOnly 'com.github.decentsoftware-eu:decentholograms:2.8.9'
     implementation "org.jetbrains:annotations:23.0.0"
     compileOnly "uk.antiperson.stackmob:StackMob:5.8.2"
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
 }
 
 def targetJavaVersion = 17

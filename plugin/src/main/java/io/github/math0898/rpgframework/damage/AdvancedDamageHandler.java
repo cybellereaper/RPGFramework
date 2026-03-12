@@ -88,12 +88,7 @@ public class AdvancedDamageHandler implements Listener {
             double dmg = damages.get(type);
             if (DamageType.archetype(type).equalsIgnoreCase("MAGIC")) dmg = dmg * (1.00 - advancedDamageEvent.getMagicResistance());
             else if (DamageType.archetype(type).equalsIgnoreCase("PHYSICAL")) dmg = dmg * (1.00 - advancedDamageEvent.getPhysicalResistance());
-            switch (resistance.get(type)) {
-                case IMMUNITY -> dmg = 0.00;
-                case RESISTANCE -> dmg = dmg * 0.50;
-                case SUSCEPTIBILITY -> dmg = dmg * 1.50;
-                case VULNERABILITY -> dmg = dmg * 2.00;
-            }
+            dmg = DamageResistanceCalculator.applyResistance(dmg, resistance.get(type));
             damage += dmg;
         }
         return damage;

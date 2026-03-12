@@ -29,7 +29,7 @@ public class Inos extends CustomMob {
      * A basic constructor to aid in the construction of a CustomMob. Contains everything essential to run spawn().
      */
     public Inos () {
-        super("Inos", EntityType.CHICKEN, Rarity.MYTHIC, 1000);
+        super("Inos", EntityType.CHICKEN, Rarity.RELIC, 1000);
     }
 
     /**

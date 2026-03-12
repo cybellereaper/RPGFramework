@@ -121,16 +121,16 @@ public class EiryerasBoss extends CustomMob implements Listener {
             new BossDrop(ItemManager.getInstance().getItem("eiryeras:HandCraftedBow"), Rarity.RARE),
 
             //Uncommon Eiryeras' Boots
-            new BossDrop(ItemManager.getInstance().getItem("eiryeras:WornGaloshes"), Rarity.UNCOMMON),
+            new BossDrop(ItemManager.getInstance().getItem("eiryeras:WornGaloshes"), Rarity.UNIQUE),
 
             //Uncommon Eiryeras' Leggings
-            new BossDrop(ItemManager.getInstance().getItem("eiryeras:HideLeggings"), Rarity.UNCOMMON),
+            new BossDrop(ItemManager.getInstance().getItem("eiryeras:HideLeggings"), Rarity.UNIQUE),
 
             //Uncommon Eiryeras' Chestplate
-            new BossDrop(ItemManager.getInstance().getItem("eiryeras:HuntersCloak"), Rarity.UNCOMMON),
+            new BossDrop(ItemManager.getInstance().getItem("eiryeras:HuntersCloak"), Rarity.UNIQUE),
 
             //Uncommon Eiryeras' Helmet
-            new BossDrop(ItemManager.getInstance().getItem("eiryeras:HuntersHood"), Rarity.UNCOMMON),
+            new BossDrop(ItemManager.getInstance().getItem("eiryeras:HuntersHood"), Rarity.UNIQUE),
 
             //Rare Eiryeras' Knife
             new BossDrop(ItemManager.getInstance().getItem("eiryeras:CeremonialKnife"), Rarity.RARE),
@@ -150,7 +150,7 @@ public class EiryerasBoss extends CustomMob implements Listener {
      * Makes sure that items and other things required for the boss fight are set up.
      */
     public EiryerasBoss() {
-        super(name, EntityType.SKELETON, Rarity.UNCOMMON, 150);
+        super(name, EntityType.SKELETON, Rarity.UNIQUE, 150);
         setArmor(new ItemBuilder(LEATHER_HELMET).setColor(255, 60, 115, 31).build(),
                 new ItemBuilder(Material.LEATHER_CHESTPLATE).setColor(255,  113, 172, 11).build(),
                 new ItemBuilder(Material.LEATHER_LEGGINGS).setColor(255,  93, 161, 124).build(),
@@ -260,7 +260,7 @@ public class EiryerasBoss extends CustomMob implements Listener {
     public static void onDeath(EntityDeathEvent event) {
         if (event.getEntity().getCustomName() != null) {
             if (event.getEntity().getCustomName().contains(name)) {
-                CustomMob.handleDrops(event, bossDrops, Rarity.UNCOMMON);
+                CustomMob.handleDrops(event, bossDrops, Rarity.UNIQUE);
                 Random r = new Random();
                 LivingEntity e = event.getEntity();
                 Objects.requireNonNull(e.getLocation().getWorld()).dropItem(e.getLocation(), new ItemStack(BONE, (int) (r.nextDouble() * 5) + 1));
