@@ -1,6 +1,14 @@
 package io.github.math0898.rpgframework;
 
-import io.github.math0898.rpgframework.commands.*;
+import io.github.math0898.rpgframework.commands.ArtifactCommand;
+import io.github.math0898.rpgframework.commands.Classes;
+import io.github.math0898.rpgframework.commands.DebugCommand;
+import io.github.math0898.rpgframework.commands.EditorCommand;
+import io.github.math0898.rpgframework.commands.GiveCommand;
+import io.github.math0898.rpgframework.commands.PartyCommand;
+import io.github.math0898.rpgframework.commands.SummonRPG;
+import io.github.math0898.rpgframework.commands.Tutorial;
+import io.github.math0898.rpgframework.commands.Updates;
 import io.github.math0898.rpgframework.damage.AdvancedDamageHandler;
 import io.github.math0898.rpgframework.enemies.MobManager;
 import io.github.math0898.rpgframework.hooks.HookManager;
@@ -10,128 +18,140 @@ import io.github.math0898.rpgframework.systems.GodEventListener;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import sugaku.rpg.framework.RPGEventListener;
 import sugaku.rpg.mobs.teir1.eiryeras.EiryerasBoss;
 import sugaku.rpg.mobs.teir1.feyrith.FeyrithBoss;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
-/**
- * The main class for the RPG Framework. A few methods and what not will be declared here for calling from other plugins
- * that are a part of the RPG suite.
- *
- * @author Sugaku
- */
-public final class RPGFramework extends JavaPlugin implements Listener {
+public final class RPGFramework extends JavaPlugin {
 
-    /**
-     * A pointer to the plugin instance.
-     */
-    public static RPGFramework plugin = null;
+    private static final String HOLOGRAM_WARNING_MESSAGE =
+            "Neither HolographicDisplays nor DecentHolograms was found.";
+    private static final String HOLOGRAM_WARNING_DETAILS =
+            "This is a non-fatal issue. Damage numbers will not be shown when hitting mobs.";
 
-    /**
-     * Is holographic displays enabled on the server?
-     */
+    private static RPGFramework instance;
+
     public static boolean useHolographicDisplays = false;
-
-    /**
-     * Is decent holograms on the server?
-     */
     public static boolean useDecentHolograms = false;
 
-    /**
-     * The ItemManager being used with this RPGFramework instance.
-     */
     @Deprecated
     public static ItemManager itemManager;
 
-    /**
-     * This method sends a message to the console and infers the level it should be sent at.
-     *
-     * @param message The message to send to the console.
-     * @param color The main color of the message being sent.
-     */
-    public static void console (String message, ChatColor color) {
-        switch (color) {
-            case RED -> console(message, color, Level.SEVERE);
-            case YELLOW -> console(message, color, Level.WARNING);
-            default -> console(message, color, Level.INFO);
-        }
+    public static void console(String message, ChatColor color) {
+        console(message, color, resolveLogLevel(color));
     }
 
-    /**
-     * This method sends a message to the console.
-     *
-     * @param message The message to send to the console.
-     * @param color The main color of the message being sent.
-     * @param lvl The level that the message should be sent at.
-     */
-    public static void console (String message, ChatColor color, Level lvl) {
-        plugin.getLogger().log(lvl, color + message);
+    public static void console(String message, ChatColor color, Level level) {
+        RPGFramework plugin = getRequiredInstance();
+        plugin.getLogger().log(level, color + message);
     }
 
-    /**
-     * An accessor method to the active Plugin instance.
-     *
-     * @return The active Plugin instance.
-     */
-    public static RPGFramework getInstance () {
-        return plugin;
+    public static RPGFramework getInstance() {
+        return instance;
     }
 
-    /**
-     * Called on enable. Just the normal things such as loading the config, registering listeners, initializing methods.
-     */
     @Override
-    public void onEnable () {
-        long startTime = System.currentTimeMillis();
-        plugin = this;
+    public void onEnable() {
+        long startupStartTimeMillis = System.currentTimeMillis();
+        instance = this;
 
-        //Register damage listeners
-        Bukkit.getPluginManager().registerEvents(new AdvancedDamageHandler(), this);
-        Bukkit.getPluginManager().registerEvents(new GodEventListener(), this); // todo remove me!
+        initializeCoreSystems();
+        registerListeners();
+        registerCommands();
+        initializeManagers();
+        detectOptionalPlugins();
+
+        console(
+                "Plugin enabled! " + ChatColor.DARK_GRAY + "Took: "
+                        + (System.currentTimeMillis() - startupStartTimeMillis) + "ms",
+                ChatColor.GREEN
+        );
+    }
+
+    private void initializeCoreSystems() {
         PartyManager.init();
         PlayerManager.init();
         DataManager.getInstance();
-        registerCommands();
-
-        //Establish hooks
         HookManager.getInstance();
-        useHolographicDisplays = Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays");
-        useDecentHolograms = Bukkit.getPluginManager().isPluginEnabled("DecentHolograms");
-        if (!useHolographicDisplays && !useDecentHolograms) {
-            console("Holographic Displays nor Decent Holograms was not found.", ChatColor.YELLOW);
-            console("This is non fatal error however you will not see damage numbers when you hit mobs.", ChatColor.YELLOW);
-        }
-        itemManager = ItemManager.getInstance();
-        MobManager.getInstance();
-
-        ItemManager.getInstance();
-
-        /* Begin block copied from sugaku.rpg.main */
-        //Registering events TODO: Move this somewhere?
-        Bukkit.getPluginManager().registerEvents(new RPGEventListener(), plugin);
-        Bukkit.getPluginManager().registerEvents(new EiryerasBoss(), plugin);
-        Bukkit.getPluginManager().registerEvents(new FeyrithBoss(), plugin);
-
-        console("Plugin enabled! " + ChatColor.DARK_GRAY + "Took: " + (System.currentTimeMillis() - startTime) + "ms", ChatColor.GREEN);
     }
 
-    /**
-     * Registers all the commands in a simple group.
-     */
-    private void registerCommands () {
+    private void registerListeners() {
+        PluginManager pluginManager = Bukkit.getPluginManager();
+
+        for (Listener listener : createListeners()) {
+            pluginManager.registerEvents(listener, this);
+        }
+    }
+
+    private List<Listener> createListeners() {
+        return List.of(
+                new AdvancedDamageHandler(),
+                new GodEventListener(),
+                new RPGEventListener(),
+                new EiryerasBoss(),
+                new FeyrithBoss()
+        );
+    }
+
+    private void initializeManagers() {
+        itemManager = ItemManager.getInstance();
+        MobManager.getInstance();
+    }
+
+    private void detectOptionalPlugins() {
+        PluginManager pluginManager = Bukkit.getPluginManager();
+
+        useHolographicDisplays = pluginManager.isPluginEnabled("HolographicDisplays");
+        useDecentHolograms = pluginManager.isPluginEnabled("DecentHolograms");
+
+        if (!useHolographicDisplays && !useDecentHolograms) {
+            console(HOLOGRAM_WARNING_MESSAGE, ChatColor.YELLOW);
+            console(HOLOGRAM_WARNING_DETAILS, ChatColor.YELLOW);
+        }
+    }
+
+    private void registerCommands() {
         console("Registering commands.", ChatColor.GRAY);
-        new Tutorial();
-        new Updates();
-        new Classes();
-        new SummonRPG();
-        new GiveCommand();
-        new PartyCommand();
-        new DebugCommand();
-        new EditorCommand();
-        new ArtifactCommand();
+
+        for (Supplier<Object> commandFactory : commandFactories()) {
+            commandFactory.get();
+        }
+
         console("Commands registered.", ChatColor.GREEN);
+    }
+
+    private List<Supplier<Object>> commandFactories() {
+        return List.of(
+                Tutorial::new,
+                Updates::new,
+                Classes::new,
+                SummonRPG::new,
+                GiveCommand::new,
+                PartyCommand::new,
+                DebugCommand::new,
+                EditorCommand::new,
+                ArtifactCommand::new
+        );
+    }
+
+    private static Level resolveLogLevel(ChatColor color) {
+        if (color == ChatColor.RED) {
+            return Level.SEVERE;
+        }
+        if (color == ChatColor.YELLOW) {
+            return Level.WARNING;
+        }
+        return Level.INFO;
+    }
+
+    private static RPGFramework getRequiredInstance() {
+        return Objects.requireNonNull(instance, "RPGFramework has not been initialized yet.");
     }
 }
