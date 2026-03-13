@@ -3,8 +3,8 @@ package io.github.math0898.rpgframework.classes.implementations;
 import io.github.math0898.rpgframework.Cooldown;
 import io.github.math0898.rpgframework.RpgPlayer;
 import io.github.math0898.rpgframework.classes.AbstractClass;
-import io.github.math0898.rpgframework.damage.events.AdvancedDamageEvent;
 import io.github.math0898.rpgframework.damage.DamageType;
+import io.github.math0898.rpgframework.damage.events.AdvancedDamageEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -17,179 +17,219 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Class implementation specific to the assassin class.
- *
- * @author Sugaku
- */
 public class AssassinClass extends AbstractClass {
 
     static final AssassinBehavior BEHAVIOR = new AssassinBehavior();
-    private static final String ARMOR_MESSAGE = "Use full leather armor to use assassin abilities.";
-    private static final int POISON_BLADE_DURATION_SECONDS = 10;
+
+    private static final Material CLASS_ITEM = Material.GHAST_TEAR;
+    private static final String ARMOR_REQUIRED_MESSAGE = "Use full leather armor to use assassin abilities.";
+
     private static final int INVISIBILITY_DURATION_SECONDS = 10;
+    private static final int POISONED_BLADE_EFFECT_DURATION_SECONDS = 10;
     private static final int HEROIC_DODGE_SPEED_DURATION_SECONDS = 10;
     private static final int PASSIVE_SPEED_DURATION_SECONDS = 21;
 
-    /**
-     * An enum with defines the Assassin's abilities. Used to make cooldowns more readable.
-     *
-     * @author Sugaku
-     */
-    private enum Abilities {
-        /**
-         * Makes the player damage immune and provides the invisibility potion effect for 10 seconds.
-         */
+    private static final int INVISIBILITY_AMPLIFIER = 1;
+    private static final int HEROIC_DODGE_SPEED_AMPLIFIER = 2;
+    private static final int PASSIVE_SPEED_AMPLIFIER = 1;
+    private static final int POISONED_BLADE_EFFECT_AMPLIFIER = 0;
+
+    private static final String POISONED_BLADE_CAST_MESSAGE = ChatColor.GREEN + "You've used poisoned blade!";
+    private static final String INVISIBILITY_CAST_MESSAGE = ChatColor.GREEN + "You've used invisibility!";
+    private static final String HEROIC_DODGE_CAST_MESSAGE =
+            ChatColor.GREEN + "You've used " + ChatColor.GOLD + "Heroic Dodge" + ChatColor.GREEN + "!";
+
+    private enum Ability {
         INVISIBILITY,
-
-        /**
-         * Causes victims to receive poison and blindness.
-         */
         POISONED_BLADE,
-
-        /**
-         * Masterfully dodges lethal damage and grants a quick burst of speed.
-         */
-        HEROIC_DODGE;
+        HEROIC_DODGE
     }
 
-    /**
-     * Creates a new AbstractClass object which is specific to the given player.
-     *
-     * @param p The player this class is specific to.
-     */
-    public AssassinClass (RpgPlayer p) {
-        super(p);
-        Cooldown[] cds = new Cooldown[3];
-        cds[Abilities.HEROIC_DODGE.ordinal()] = new Cooldown(300);
-        cds[Abilities.POISONED_BLADE.ordinal()] = new Cooldown(60);
-        cds[Abilities.INVISIBILITY.ordinal()] = new Cooldown(30);
-        setCooldowns(cds);
-        setClassItems(Material.GHAST_TEAR);
+    public AssassinClass(RpgPlayer player) {
+        super(player);
+        setCooldowns(createCooldowns());
+        setClassItems(CLASS_ITEM);
     }
 
-    /**
-     * Called whenever this DamageModifier is relevant on a defensive front.
-     *
-     * @param event The AdvancedDamageEvent to consider.
-     */
     @Override
-    public void damaged (AdvancedDamageEvent event) {
-        float heroicDodgeRemaining = getCooldowns()[Abilities.HEROIC_DODGE.ordinal()].getRemaining();
-        float invisibilityRemaining = getCooldowns()[Abilities.INVISIBILITY.ordinal()].getRemaining();
+    public void damaged(AdvancedDamageEvent event) {
         double dodgeRoll = ThreadLocalRandom.current().nextDouble();
-        if (BEHAVIOR.shouldNegateIncomingDamage(heroicDodgeRemaining, invisibilityRemaining, dodgeRoll)) {
+
+        if (BEHAVIOR.shouldNegateIncomingDamage(
+                getRemainingCooldown(Ability.HEROIC_DODGE),
+                getRemainingCooldown(Ability.INVISIBILITY),
+                dodgeRoll
+        )) {
             event.setCancelled(true);
         }
     }
 
-    /**
-     * Called whenever this DamageModifier is relevant on an offensive front.
-     *
-     * @param event The AdvancedDamageEvent to consider.
-     */
     @Override
-    public void attack (AdvancedDamageEvent event) {
-        if (!(event.getEntity() instanceof LivingEntity entity)) {
+    public void attack(AdvancedDamageEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity target)) {
             return;
         }
+
         if (!event.getPrimaryDamage().isPhysical()) {
             return;
         }
 
-        event.addDamage(BEHAVIOR.bonusDamage(entity instanceof Player), DamageType.SLASH);
-        if (!BEHAVIOR.isPoisonedBladeActive(getCooldowns()[Abilities.POISONED_BLADE.ordinal()].getRemaining())) {
+        event.addDamage(BEHAVIOR.bonusDamage(target instanceof Player), DamageType.SLASH);
+
+        if (!BEHAVIOR.isPoisonedBladeActive(getRemainingCooldown(Ability.POISONED_BLADE))) {
             return;
         }
 
-        for (PotionEffectType type : BEHAVIOR.poisonedBladeEffects()) {
-            entity.addPotionEffect(new PotionEffect(type, POISON_BLADE_DURATION_SECONDS * 20, 0));
-        }
+        applyPoisonedBladeEffects(target);
     }
 
-    /**
-     * Called once every 20 seconds to apply a passive effect to the player.
-     */
     @Override
-    public void passive () {
-        if (correctArmor()) {
-            getPlayer().addPotionEffect(PotionEffectType.SPEED, PASSIVE_SPEED_DURATION_SECONDS * 20, 1, true, false);
-        }
-    }
-
-    /**
-     * Called whenever a player left-clicks while holding a class item. To reach this method, the player must be holding
-     * a class item. No promises are made if they're wearing armor or not.
-     *
-     * @param event The PlayerInteractEvent that lead to this method being called.
-     * @param type  The type of material that was used in this cast.
-     */
-    @Override
-    public void onLeftClickCast (PlayerInteractEvent event, Material type) {
+    public void passive() {
         if (!correctArmor()) {
-            send(ARMOR_MESSAGE);
             return;
         }
-        if (offCooldown(Abilities.POISONED_BLADE.ordinal())) {
-            send(ChatColor.GREEN + "You've used poisoned blade!");
-            getCooldowns()[Abilities.POISONED_BLADE.ordinal()].restart();
-        }
+
+        getPlayer().addPotionEffect(
+                PotionEffectType.SPEED,
+                toTicks(PASSIVE_SPEED_DURATION_SECONDS),
+                PASSIVE_SPEED_AMPLIFIER,
+                true,
+                false
+        );
     }
 
-    /**
-     * Called whenever a player right-clicks while holding a class item. To reach this method, the player must be
-     * holding a class item. No promises are made if they're wearing armor or not.
-     *
-     * @param event The PlayerInteractEvent that lead to this method being called.
-     * @param type  The type of material that was used in this cast.
-     */
     @Override
-    public void onRightClickCast (PlayerInteractEvent event, Material type) {
+    public void onLeftClickCast(PlayerInteractEvent event, Material type) {
+        if (!canUseAbilities()) {
+            return;
+        }
+
+        castPoisonedBlade();
+    }
+
+    @Override
+    public void onRightClickCast(PlayerInteractEvent event, Material type) {
+        if (!canUseAbilities()) {
+            return;
+        }
+
+        castInvisibility();
+    }
+
+    @Override
+    public boolean onDeath() {
         if (!correctArmor()) {
-            send(ARMOR_MESSAGE);
-            return;
+            return true;
         }
-        if (offCooldown(Abilities.INVISIBILITY.ordinal())) {
-            send(ChatColor.GREEN + "You've used invisibility!");
-            getPlayer().addPotionEffect(PotionEffectType.INVISIBILITY, INVISIBILITY_DURATION_SECONDS * 20, 1);
-            getCooldowns()[Abilities.INVISIBILITY.ordinal()].restart();
+
+        if (!isAbilityReady(Ability.HEROIC_DODGE)) {
+            return true;
         }
+
+        Player player = getPlayer().getBukkitPlayer();
+
+        send(HEROIC_DODGE_CAST_MESSAGE);
+        player.playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 0.8f, 1.0f);
+        getPlayer().addPotionEffect(
+                PotionEffectType.SPEED,
+                toTicks(HEROIC_DODGE_SPEED_DURATION_SECONDS),
+                HEROIC_DODGE_SPEED_AMPLIFIER
+        );
+        restartCooldown(Ability.HEROIC_DODGE);
+
+        return false;
     }
 
-    /**
-     * Called when the class user has 'died'.
-     *
-     * @return Whether a death should be respected or not.
-     */
     @Override
-    public boolean onDeath () {
-        if (offCooldown(Abilities.HEROIC_DODGE.ordinal()) && correctArmor()) {
-            send(ChatColor.GREEN + "You've used " + ChatColor.GOLD + "Heroic Dodge" + ChatColor.GREEN + "!");
-            Player player = getPlayer().getBukkitPlayer();
-            player.playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 0.8f, 1.0f);
-            getPlayer().addPotionEffect(PotionEffectType.SPEED, HEROIC_DODGE_SPEED_DURATION_SECONDS * 20, 2);
-            getCooldowns()[Abilities.HEROIC_DODGE.ordinal()].restart();
+    public boolean correctArmor(EquipmentSlot slot) {
+        EntityEquipment equipment = getPlayer().getBukkitPlayer().getEquipment();
+        if (equipment == null) {
             return false;
         }
-        return true;
+
+        ItemStack equippedItem = equipment.getItem(slot);
+        if (equippedItem == null) {
+            return false;
+        }
+
+        return BEHAVIOR.hasRequiredArmor(slot, equippedItem.getType());
     }
 
-    /**
-     * Checks a specific slot to see if this player is wearing their class armor or not.
-     *
-     * @param slot The slot to check to see if it is the correct armor type.
-     * @return True if the player is wearing the correct armor for that slot.
-     */
-    @Override
-    public boolean correctArmor (EquipmentSlot slot) {
-        EntityEquipment equipment = getPlayer().getBukkitPlayer().getEquipment();
-        if (equipment == null) return false;
-        ItemStack item = equipment.getItem(slot);
-        if (item == null) return false;
-        return BEHAVIOR.hasRequiredArmor(slot, item.getType());
+    private void castPoisonedBlade() {
+        if (!isAbilityReady(Ability.POISONED_BLADE)) {
+            return;
+        }
+
+        send(POISONED_BLADE_CAST_MESSAGE);
+        restartCooldown(Ability.POISONED_BLADE);
+    }
+
+    private void castInvisibility() {
+        if (!isAbilityReady(Ability.INVISIBILITY)) {
+            return;
+        }
+
+        send(INVISIBILITY_CAST_MESSAGE);
+        getPlayer().addPotionEffect(
+                PotionEffectType.INVISIBILITY,
+                toTicks(INVISIBILITY_DURATION_SECONDS),
+                INVISIBILITY_AMPLIFIER
+        );
+        restartCooldown(Ability.INVISIBILITY);
+    }
+
+    private void applyPoisonedBladeEffects(LivingEntity target) {
+        for (PotionEffectType effectType : BEHAVIOR.poisonedBladeEffects()) {
+            target.addPotionEffect(new PotionEffect(
+                    effectType,
+                    toTicks(POISONED_BLADE_EFFECT_DURATION_SECONDS),
+                    POISONED_BLADE_EFFECT_AMPLIFIER
+            ));
+        }
+    }
+
+    private boolean canUseAbilities() {
+        if (correctArmor()) {
+            return true;
+        }
+
+        send(ARMOR_REQUIRED_MESSAGE);
+        return false;
+    }
+
+    private boolean isAbilityReady(Ability ability) {
+        return offCooldown(ability.ordinal());
+    }
+
+    private void restartCooldown(Ability ability) {
+        getCooldowns()[ability.ordinal()].restart();
+    }
+
+    private float getRemainingCooldown(Ability ability) {
+        return getCooldowns()[ability.ordinal()].getRemaining();
+    }
+
+    private int toTicks(int seconds) {
+        return seconds * 20;
+    }
+
+    private static Cooldown[] createCooldowns() {
+        Map<Ability, Integer> cooldownsByAbility = new EnumMap<>(Ability.class);
+        cooldownsByAbility.put(Ability.HEROIC_DODGE, 300);
+        cooldownsByAbility.put(Ability.POISONED_BLADE, 60);
+        cooldownsByAbility.put(Ability.INVISIBILITY, 30);
+
+        Cooldown[] cooldowns = new Cooldown[Ability.values().length];
+        for (Ability ability : Ability.values()) {
+            cooldowns[ability.ordinal()] = new Cooldown(cooldownsByAbility.get(ability));
+        }
+
+        return cooldowns;
     }
 }
 
@@ -198,14 +238,18 @@ final class AssassinBehavior {
     private static final double PLAYER_BONUS_DAMAGE = 5.0;
     private static final double NON_PLAYER_BONUS_DAMAGE = 10.0;
     private static final double RANDOM_DODGE_CHANCE = 0.10;
+
     private static final float HEROIC_DODGE_IMMUNITY_THRESHOLD = 290;
     private static final float INVISIBILITY_IMMUNITY_THRESHOLD = 20;
     private static final float POISONED_BLADE_ACTIVE_THRESHOLD = 50;
+
     private static final List<PotionEffectType> POISONED_BLADE_EFFECTS = List.of(
             PotionEffectType.BLINDNESS,
             PotionEffectType.POISON,
             PotionEffectType.SLOWNESS
     );
+
+    private static final Map<EquipmentSlot, Material> REQUIRED_ARMOR_BY_SLOT = createRequiredArmorBySlot();
 
     boolean shouldNegateIncomingDamage(float heroicDodgeRemaining, float invisibilityRemaining, double dodgeRoll) {
         return heroicDodgeRemaining >= HEROIC_DODGE_IMMUNITY_THRESHOLD
@@ -225,13 +269,20 @@ final class AssassinBehavior {
         return POISONED_BLADE_EFFECTS;
     }
 
-    boolean hasRequiredArmor(EquipmentSlot slot, Material type) {
-        return switch (slot) {
-            case HEAD -> type == Material.LEATHER_HELMET;
-            case CHEST -> type == Material.LEATHER_CHESTPLATE;
-            case LEGS -> type == Material.LEATHER_LEGGINGS;
-            case FEET -> type == Material.LEATHER_BOOTS;
-            default -> true;
-        };
+    boolean hasRequiredArmor(EquipmentSlot slot, Material material) {
+        Material requiredMaterial = REQUIRED_ARMOR_BY_SLOT.get(slot);
+        if (requiredMaterial == null) {
+            return true;
+        }
+        return requiredMaterial == material;
+    }
+
+    private static Map<EquipmentSlot, Material> createRequiredArmorBySlot() {
+        Map<EquipmentSlot, Material> requiredArmor = new EnumMap<>(EquipmentSlot.class);
+        requiredArmor.put(EquipmentSlot.HEAD, Material.LEATHER_HELMET);
+        requiredArmor.put(EquipmentSlot.CHEST, Material.LEATHER_CHESTPLATE);
+        requiredArmor.put(EquipmentSlot.LEGS, Material.LEATHER_LEGGINGS);
+        requiredArmor.put(EquipmentSlot.FEET, Material.LEATHER_BOOTS);
+        return requiredArmor;
     }
 }
