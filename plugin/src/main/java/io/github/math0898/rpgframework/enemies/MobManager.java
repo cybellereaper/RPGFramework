@@ -5,6 +5,8 @@ import org.bukkit.Location;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
+import io.github.math0898.rpgframework.RPGFramework;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.github.math0898.rpgframework.RPGFramework.console;
-import static io.github.math0898.rpgframework.RPGFramework.plugin;
 
 /**
  * The MobManager is called upon to defined CustomMobs and load their stats from files during loading.
@@ -54,7 +55,7 @@ public class MobManager {
             }
         }
         for (String itemResources : new String[]{"mobs/boss.yml"})
-            plugin.saveResource(itemResources, true); // todo: refactor to reduce scope when adding multiple bosses and sets.
+            RPGFramework.getPlugin().saveResource(itemResources, true); // todo: refactor to reduce scope when adding multiple bosses and sets.
         File[] files = itemsDir.listFiles();
         if (files == null) console("Cannot find any custom mob files.", ChatColor.YELLOW);
         else parseFiles(files);

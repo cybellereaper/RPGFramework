@@ -50,14 +50,14 @@ public class ItemManager {
             }
         }
         for (String itemResources : new String[]{ "items/krusk.yml", "items/other.yml", "items/eiryeras.yml", "items/feyrith.yml", "items/gods.yml", "items/vanilla.yml", "items/seignour.yml"})
-            plugin.saveResource(itemResources, true); // todo: refactor to reduce scope when adding multiple bosses and sets.
+            RPGFramework.getPlugin().saveResource(itemResources, true); // todo: refactor to reduce scope when adding multiple bosses and sets.
         File[] files = itemsDir.listFiles();
         if (files == null) console("Cannot find any item files.", ChatColor.YELLOW);
         else parseFiles(files);
         replaceRecipies();
-        Bukkit.getScheduler().runTaskAsynchronously(RPGFramework.getInstance(), this::passives);
-        Bukkit.getPluginManager().registerEvents(new SylvathianThornWeaver(), RPGFramework.getInstance());
-        Bukkit.getPluginManager().registerEvents(new WrathOfFeyrith(), RPGFramework.getInstance());
+        Bukkit.getScheduler().runTaskAsynchronously(RPGFramework.getPlugin(), this::passives);
+        Bukkit.getPluginManager().registerEvents(new SylvathianThornWeaver(), RPGFramework.getPlugin());
+        Bukkit.getPluginManager().registerEvents(new WrathOfFeyrith(), RPGFramework.getPlugin());
     }
 
     /**
@@ -174,7 +174,7 @@ public class ItemManager {
      * todo: Refactor to be async and per player.
      */
     public void passives () {
-        if (!RPGFramework.getInstance().isEnabled()) return;
+        if (!RPGFramework.getPlugin().isEnabled()) return;
         for (Player p : Bukkit.getOnlinePlayers()) {
             EntityEquipment equipment = p.getEquipment();
             if (equipment == null) continue;
@@ -182,14 +182,14 @@ public class ItemManager {
             if (helm == null) continue;
             if (helm.getType().equals(Material.LEATHER_HELMET)) {
                 if (helm.equals(getItem("other:HelmetOfDarkness"))) {
-                    Bukkit.getScheduler().runTask(RPGFramework.getInstance(), () -> {
+                    Bukkit.getScheduler().runTask(RPGFramework.getPlugin(), () -> {
                         p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 21 * 20, 255, true, false));
                         p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 21 * 20, 255, true, false));
                     });
                 }
             }
         }
-        Bukkit.getScheduler().runTaskLaterAsynchronously(RPGFramework.getInstance(), this::passives, 20 * 20);
+        Bukkit.getScheduler().runTaskLaterAsynchronously(RPGFramework.getPlugin(), this::passives, 20 * 20);
     }
 
     /**
@@ -242,7 +242,7 @@ public class ItemManager {
             if (r instanceof Keyed key)
                 Bukkit.removeRecipe(key.getKey());
         });
-        ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(RPGFramework.getInstance(), "diamond-helmet"), getItem("vanilla:DiamondHelmet"));
+        ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(RPGFramework.getPlugin(), "diamond-helmet"), getItem("vanilla:DiamondHelmet"));
         recipe.shape("AAA", "ABA", "BBB");
         recipe.setIngredient('A', Material.DIAMOND);
         Bukkit.addRecipe(recipe);

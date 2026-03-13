@@ -33,7 +33,7 @@ public class StackMobsHook implements Listener {
         isStackMob = Bukkit.getPluginManager().isPluginEnabled("StackMob");
         if (isStackMob) {
             RPGFramework.console("Found StackMobs. Registering hook to prevent stacking RPG mobs.", ChatColor.GREEN);
-            Bukkit.getPluginManager().registerEvents(this, RPGFramework.getInstance());
+            Bukkit.getPluginManager().registerEvents(this, RPGFramework.getPlugin());
         }
     }
 

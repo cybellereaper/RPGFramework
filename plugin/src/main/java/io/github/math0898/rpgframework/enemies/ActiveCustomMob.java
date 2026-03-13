@@ -43,7 +43,7 @@ public class ActiveCustomMob implements DamageModifier, Listener {
      */
     public ActiveCustomMob (LivingEntity entity, String namespaceKey) {
         this.entity = entity;
-        Bukkit.getPluginManager().registerEvents(this, RPGFramework.getInstance());
+        Bukkit.getPluginManager().registerEvents(this, RPGFramework.getPlugin());
         this.namespaceKey = namespaceKey;
         customMobEntry = MobManager.getInstance().getCustomMob(namespaceKey);
     }

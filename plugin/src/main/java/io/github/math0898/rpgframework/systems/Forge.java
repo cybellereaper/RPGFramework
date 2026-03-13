@@ -13,11 +13,12 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+
+import io.github.math0898.rpgframework.RPGFramework;
 import sugaku.rpg.framework.items.ItemsManager;
 
 import java.util.*;
 
-import static io.github.math0898.rpgframework.RPGFramework.plugin;
 import static org.bukkit.enchantments.Enchantment.*;
 import static org.bukkit.Material.*;
 
@@ -79,7 +80,7 @@ public class Forge {
         clickable.add(15);
         Player player = (Player) event.getWhoClicked();
         if ((clickable.contains(event.getSlot()) || !Objects.requireNonNull(event.getClickedInventory()).contains(forgeIndicator))) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> forgeUpdate(event.getWhoClicked().getOpenInventory(), player), 1);
+            Bukkit.getScheduler().runTaskLater(RPGFramework.getPlugin(), () -> forgeUpdate(event.getWhoClicked().getOpenInventory(), player), 1);
         } else if (event.getSlot() == 31 && Objects.requireNonNull(event.getCurrentItem()).getType() ==  LIME_STAINED_GLASS_PANE) {
             player.setLevel(player.getLevel() - pendingCost);
             player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.8f, 0.5f);

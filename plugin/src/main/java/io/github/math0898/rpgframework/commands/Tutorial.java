@@ -44,7 +44,7 @@ public class Tutorial extends BetterCommand {
      */
     public Tutorial () {
         super("tutorial");
-        YamlConfiguration data = YamlConfiguration.loadConfiguration(new InputStreamReader(Objects.requireNonNull(RPGFramework.getInstance().getResource("tutorials.yml"))));
+        YamlConfiguration data = YamlConfiguration.loadConfiguration(new InputStreamReader(Objects.requireNonNull(RPGFramework.getPlugin().getResource("tutorials.yml"))));
         for (String key : data.getKeys(false))
             sections.put(key.toLowerCase(), new Section(data.getString(key + ".title"), data.getBoolean(key + ".root"), data.getStringList(key + ".subsections"), data.getStringList(key + ".message")));
         sections.forEach((str, s) -> {

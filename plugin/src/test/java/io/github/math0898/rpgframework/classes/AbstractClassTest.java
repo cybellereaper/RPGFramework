@@ -81,7 +81,7 @@ class AbstractClassTest {
             return getCooldown(index);
         }
 
-        private int classItemIndex(Material material) {
+        private boolean classItemIndex(Material material) {
             return isClassItem(material);
         }
 

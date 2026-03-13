@@ -36,7 +36,7 @@ public class Updates extends BetterCommand {
      */
     public Updates () {
         super("updates");
-        YamlConfiguration data = YamlConfiguration.loadConfiguration(new InputStreamReader(Objects.requireNonNull(RPGFramework.getInstance().getResource("updates.yml"))));
+        YamlConfiguration data = YamlConfiguration.loadConfiguration(new InputStreamReader(Objects.requireNonNull(RPGFramework.getPlugin().getResource("updates.yml"))));
         for (String key : data.getKeys(false))
             updates.put(key, new Update(data.getString(key + ".title"), data.getString(key + ".date"), data.getStringList(key + ".message")));
     }

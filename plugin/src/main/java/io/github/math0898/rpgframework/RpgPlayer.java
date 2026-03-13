@@ -479,6 +479,7 @@ public class RpgPlayer {
                 attribute -> {
                     player.setHealth(attribute.getValue());
                     player.setHealthScale(DEFAULT_HEALTH_SCALE);
+                    return null;
                 },
                 "health"
         );
@@ -489,6 +490,7 @@ public class RpgPlayer {
                 LEVEL_DAMAGE_MODIFIER_ID,
                 damageBonus(level) / RPG_TO_MC_SCALAR,
                 attribute -> {
+                    return null;
                 },
                 "damage"
         );

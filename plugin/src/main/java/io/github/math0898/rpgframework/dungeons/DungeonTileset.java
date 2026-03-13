@@ -49,7 +49,7 @@ public class DungeonTileset {
     public void createStartingRoom (Location originPoint) {
         RPGFramework.console("DungeonTileset: Created Starting Room", ChatColor.AQUA);
         Tile startingTile = tiles.get("starting-room");
-        Bukkit.getScheduler().runTask( RPGFramework.getInstance(),
+        Bukkit.getScheduler().runTask( RPGFramework.getPlugin(),
                 () -> startingTile.generate(originPoint));
     }
 

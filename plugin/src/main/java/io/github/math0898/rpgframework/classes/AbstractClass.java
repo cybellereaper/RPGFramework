@@ -174,7 +174,7 @@ public abstract class AbstractClass implements Class, Listener {
             return;
         }
 
-        RPGFramework plugin = RPGFramework.getInstance();
+        RPGFramework plugin = RPGFramework.getPlugin();
         if (plugin != null) {
             Bukkit.getPluginManager().registerEvents(this, plugin);
         }

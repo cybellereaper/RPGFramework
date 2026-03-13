@@ -176,7 +176,7 @@ public class BerserkerClass extends AbstractClass {
         return false;
     }
 
-    private boolean isClassItem(Material material) {
+    protected boolean isClassItem(Material material) {
         return material == CLASS_ITEM;
     }
 
@@ -199,7 +199,7 @@ public class BerserkerClass extends AbstractClass {
     }
 
     private boolean isIndomitableSpiritActive() {
-        int remainingCooldown = getCooldowns()[Ability.INDOMITABLE_SPIRIT.ordinal()].getRemaining();
+        int remainingCooldown = (int) getCooldowns()[Ability.INDOMITABLE_SPIRIT.ordinal()].getRemaining();
         return remainingCooldown >= INDOMITABLE_SPIRIT_COOLDOWN_SECONDS - INDOMITABLE_SPIRIT_ACTIVE_SECONDS;
     }
 

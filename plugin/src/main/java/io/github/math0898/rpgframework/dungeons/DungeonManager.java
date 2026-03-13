@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Random;
 
 import static io.github.math0898.rpgframework.RPGFramework.console;
-import static io.github.math0898.rpgframework.RPGFramework.plugin;
 
 /**
  * The dungeon manager handles moving players to and from their dungeons. This includes win detection and dungeon
@@ -49,7 +48,7 @@ public class DungeonManager {
             }
         }
         for (String itemResources : new String[]{ "tilesets/TestTileset.yml" })
-            plugin.saveResource(itemResources, true); // todo: refactor to reduce scope when adding multiple tilesets.
+            RPGFramework.getPlugin().saveResource(itemResources, true); // todo: refactor to reduce scope when adding multiple tilesets.
         File[] files = tilesetDir.listFiles();
         if (files == null) console("Cannot find any tileset files.", ChatColor.YELLOW);
         for (File f : files)

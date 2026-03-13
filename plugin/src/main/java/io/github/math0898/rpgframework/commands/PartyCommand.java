@@ -1,6 +1,7 @@
 package io.github.math0898.rpgframework.commands;
 
 import io.github.math0898.rpgframework.PlayerManager;
+import io.github.math0898.rpgframework.RPGFramework;
 import io.github.math0898.rpgframework.classes.Classes;
 import io.github.math0898.rpgframework.RpgPlayer;
 import io.github.math0898.rpgframework.parties.Party;
@@ -15,8 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-
-import static io.github.math0898.rpgframework.RPGFramework.plugin;
 
 /**
  * The Party Command is used for interacting and manipulating parties.
@@ -268,7 +267,7 @@ public class PartyCommand extends BetterCommand {
             party.getPlayers().forEach((p) -> {
                 if (!p.equals(party.getLeader())) {
                     p.sendMessage(prefix + "You are being summoned to " + sender.getName() + ". 3s");
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> p.teleport(((Player) sender).getLocation()), 3 * 20);
+                    Bukkit.getScheduler().runTaskLater(RPGFramework.getPlugin(), () -> p.teleport(((Player) sender).getLocation()), 3 * 20);
                 }
                 else p.sendMessage(prefix + "You are summoning your party. They will be here in 3s");
             });

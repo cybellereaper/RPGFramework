@@ -28,13 +28,13 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static io.github.math0898.rpgframework.RPGFramework.getInstance;
+import static io.github.math0898.rpgframework.RPGFramework.getPlugin;
 
 public final class PlayerManager implements Listener {
 
-    private static final String CONSOLE_PREFIX =
-            ChatColor.DARK_GRAY + "[" + ChatColor.DARK_GREEN + "RPG" + ChatColor.DARK_GRAY + "] "
-                    + "[" + ChatColor.LIGHT_PURPLE + "PlayMgr" + ChatColor.DARK_GRAY + "] ";
+    private static final String CONSOLE_PREFIX = ChatColor.DARK_GRAY + "[" + ChatColor.DARK_GREEN + "RPG"
+            + ChatColor.DARK_GRAY + "] "
+            + "[" + ChatColor.LIGHT_PURPLE + "PlayMgr" + ChatColor.DARK_GRAY + "] ";
 
     private static final String[] HONORABLE_DEATH_MESSAGES = {
             " was slain by ",
@@ -60,13 +60,12 @@ public final class PlayerManager implements Listener {
     }
 
     public static void init() {
-        Bukkit.getPluginManager().registerEvents(new PlayerManager(), getInstance());
+        Bukkit.getPluginManager().registerEvents(new PlayerManager(), getPlugin());
         Bukkit.getScheduler().runTaskTimerAsynchronously(
-                getInstance(),
+                getPlugin(),
                 PlayerManager::saveAllPlayers,
                 AUTO_SAVE_PERIOD_TICKS,
-                AUTO_SAVE_PERIOD_TICKS
-        );
+                AUTO_SAVE_PERIOD_TICKS);
     }
 
     public static RpgPlayer getPlayer(UUID uuid) {
@@ -89,7 +88,7 @@ public final class PlayerManager implements Listener {
 
         log("Adding player to player list.");
         PLAYERS_BY_ID.put(player.getUuid(), player);
-        Bukkit.getScheduler().runTaskLater(getInstance(), player::passive, PASSIVE_START_DELAY_TICKS);
+        Bukkit.getScheduler().runTaskLater(getPlugin(), player::passive, PASSIVE_START_DELAY_TICKS);
         log("Player added to player list.", ChatColor.GREEN);
     }
 
@@ -223,7 +222,8 @@ public final class PlayerManager implements Listener {
         }
 
         log(message);
-        bukkitPlayer.playSound(bukkitPlayer.getLocation(), Sound.BLOCK_ANVIL_PLACE, DEATH_SOUND_VOLUME, DEATH_SOUND_PITCH);
+        bukkitPlayer.playSound(bukkitPlayer.getLocation(), Sound.BLOCK_ANVIL_PLACE, DEATH_SOUND_VOLUME,
+                DEATH_SOUND_PITCH);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -231,7 +231,10 @@ public final class PlayerManager implements Listener {
         RpgPlayer player = new RpgPlayer(event.getPlayer());
 
         addPlayer(player);
-        Bukkit.getScheduler().runTaskLater(getInstance(), player::heal, POST_JOIN_HEAL_DELAY_TICKS);
+        Bukkit.getScheduler().runTaskLater(
+                getPlugin(),
+                () -> player.heal(),
+                POST_JOIN_HEAL_DELAY_TICKS);
         DataManager.getInstance().load(player);
     }
 
@@ -280,7 +283,8 @@ public final class PlayerManager implements Listener {
         if (killer.isCustomNameVisible() && killer.getCustomName() != null) {
             victimPlayer.sendMessage(killer.getCustomName() + ChatColor.GRAY + " has left the fight upon your death");
             killer.remove();
-            return victim.getPlayerRarity() + victimPlayer.getName() + ChatColor.GRAY + deathFlavor + killer.getCustomName();
+            return victim.getPlayerRarity() + victimPlayer.getName() + ChatColor.GRAY + deathFlavor
+                    + killer.getCustomName();
         }
 
         return victim.getPlayerRarity() + victimPlayer.getName() + ChatColor.GRAY + deathFlavor + killer.getName();

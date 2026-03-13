@@ -179,7 +179,7 @@ public class RpgItem { // todo: Custom Model Data support., magic power
     public RpgItem (ConfigurationSection section) { // todo: We should add Gear Score, Armor/Weapon Type, ItemID, etc. to a Persistent Data Value to make classes and custom effects easier.
         if (section == null)throw new NullPointerException("Configuration section is null!");
         if (section.contains("meta")) {
-            Logger logger = RPGFramework.getInstance().getLogger();
+            Logger logger = RPGFramework.getPlugin().getLogger();
             logger.log(Level.WARNING, "Using legacy item support.");
             item = new ItemParser(section).build();
         }

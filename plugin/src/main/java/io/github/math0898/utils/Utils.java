@@ -23,7 +23,7 @@ public class Utils { // todo: Add loggers and logging styles system. (I want to 
      * @return The active plugin.
      */
     @Getter
-    private static final JavaPlugin plugin = RPGFramework.getInstance();
+    private static final JavaPlugin plugin = RPGFramework.getPlugin();
 
     /**
      * This method sends a message to the console assuming the message to simply be informational.

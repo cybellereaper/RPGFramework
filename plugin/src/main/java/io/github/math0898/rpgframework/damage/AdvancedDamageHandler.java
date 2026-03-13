@@ -108,17 +108,17 @@ public class AdvancedDamageHandler implements Listener {
         String text = ChatColor.RED + "☆" + ChatColor.YELLOW + String.format("%.1f", damage) + ChatColor.RED + "☆";
         try {
             if (RPGFramework.useHolographicDisplays) {
-                Hologram hologram = HologramsAPI.createHologram(RPGFramework.plugin, locale);
+                Hologram hologram = HologramsAPI.createHologram(RPGFramework.getPlugin(), locale);
                 hologram.appendTextLine(text);
-                Bukkit.getScheduler().runTaskLater(RPGFramework.plugin, hologram::delete, 5*10);
+                Bukkit.getScheduler().runTaskLater(RPGFramework.getPlugin(), hologram::delete, 5*10);
             }
             if (RPGFramework.useDecentHolograms) {
                 String name = "rpgframeworkdamage" + hologramCount.getAndAdd(1L);
                 DHAPI.createHologram(name, locale, Collections.singletonList(text));
-                Bukkit.getScheduler().runTaskLater(RPGFramework.plugin, () -> DHAPI.removeHologram(name), 5*10);
+                Bukkit.getScheduler().runTaskLater(RPGFramework.getPlugin(), () -> DHAPI.removeHologram(name), 5*10);
             }
         } catch (NoClassDefFoundError error) {
-            RPGFramework.getInstance().getLogger().log(Level.WARNING, error.getMessage());
+            RPGFramework.getPlugin().getLogger().log(Level.WARNING, error.getMessage());
         }
     }
 }

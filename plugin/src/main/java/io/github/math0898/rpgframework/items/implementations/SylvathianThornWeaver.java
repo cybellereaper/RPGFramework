@@ -14,7 +14,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
-import static io.github.math0898.rpgframework.RPGFramework.getInstance;
+import static io.github.math0898.rpgframework.RPGFramework.getPlugin;
 
 /**
  * When right-clicked the SylvathianThornWeaver summons an aura of thorns which damages nearby players.
@@ -59,7 +59,7 @@ public class SylvathianThornWeaver implements Listener {
         lastUsed.put(player.getUniqueId(), System.currentTimeMillis());
         Location location = player.getLocation();
         final UUID uuid = player.getUniqueId();
-        BukkitTask task1 = Bukkit.getScheduler().runTaskTimer(getInstance(), () -> {
+        BukkitTask task1 = Bukkit.getScheduler().runTaskTimer(getPlugin(), () -> {
             Player p = Bukkit.getPlayer(uuid);
             p.getWorld().playSound(location, Sound.BLOCK_AZALEA_LEAVES_HIT, 2.0f, 1.0f);
             p.getWorld().playSound(location, Sound.BLOCK_CHERRY_LEAVES_HIT, 2.0f, 1.0f);
@@ -67,13 +67,13 @@ public class SylvathianThornWeaver implements Listener {
             p.getWorld().playSound(location, Sound.BLOCK_GRASS_BREAK, 2.0f, 1.0f);
             p.getWorld().playSound(location, Sound.BLOCK_GRASS_FALL, 2.0f, 1.0f);
         }, 0, 7);
-        BukkitTask task2 = Bukkit.getScheduler().runTaskTimer(getInstance(), () -> {
+        BukkitTask task2 = Bukkit.getScheduler().runTaskTimer(getPlugin(), () -> {
             Random rand = new Random();
             Player p = Bukkit.getPlayer(uuid);
             for (int i = 0; i < 50; i++)
                 p.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, p.getLocation().add((rand.nextDouble() * 8.0) - 4.0, (rand.nextDouble() * 2.0) - 1.0, (rand.nextDouble() * 8.0) - 4.0), 2);
         }, 0, 9);
-        BukkitTask task3 = Bukkit.getScheduler().runTaskTimer(getInstance(), () -> {
+        BukkitTask task3 = Bukkit.getScheduler().runTaskTimer(getPlugin(), () -> {
             RpgPlayer rpg = PlayerManager.getPlayer(uuid);
             if (rpg == null) return;
             rpg.nearbyEnemyCasterTargets(4.0).forEach((e) -> { // todo: Will need to do something like this for advanced damage.
@@ -81,7 +81,7 @@ public class SylvathianThornWeaver implements Listener {
                 if (e.getNoDamageTicks() == 0) e.setNoDamageTicks(0);
             });
         }, 0, 20);
-        Bukkit.getScheduler().runTaskLater(getInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(getPlugin(), () -> {
             task1.cancel();
             task2.cancel();
             task3.cancel();

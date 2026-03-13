@@ -1,8 +1,10 @@
 package io.github.math0898.rpgframework.parties;
 
 import io.github.math0898.rpgframework.PlayerManager;
+import io.github.math0898.rpgframework.RPGFramework;
 import io.github.math0898.rpgframework.RpgPlayer;
 import io.github.math0898.rpgframework.classes.Classes;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Arrow;
@@ -15,7 +17,6 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 import java.util.ArrayList;
 
-import static io.github.math0898.rpgframework.RPGFramework.plugin;
 
 /**
  * The party manager handles things relating to parties in general. This includes things like party chat.
@@ -38,7 +39,7 @@ public class PartyManager implements Listener {
      * Initializes the party manager so that it can listen to events.
      */
     public static void init () {
-        Bukkit.getPluginManager().registerEvents(new PartyManager(), plugin);
+        Bukkit.getPluginManager().registerEvents(new PartyManager(), RPGFramework.getPlugin());
     }
 
     /**

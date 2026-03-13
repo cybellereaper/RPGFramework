@@ -66,10 +66,10 @@ public class Dungeon implements Listener {
         this.players = new ArrayList<>(players);
         this.tileset = tileset;
         this.originPoint = originPoint;
-        Bukkit.getPluginManager().registerEvents(this, RPGFramework.getInstance());
-        Bukkit.getScheduler().runTaskAsynchronously(RPGFramework.getInstance(), () -> {
+        Bukkit.getPluginManager().registerEvents(this, RPGFramework.getPlugin());
+        Bukkit.getScheduler().runTaskAsynchronously(RPGFramework.getPlugin(), () -> {
             this.tileset.createStartingRoom(this.originPoint); // todo: This method requires some synchronous actions to complete. It may not be safe to teleport players.
-            Bukkit.getScheduler().runTask(RPGFramework.getInstance(), this::teleportParticipants);
+            Bukkit.getScheduler().runTask(RPGFramework.getPlugin(), this::teleportParticipants);
             this.tileset.generate(this.originPoint, GOLDEN_PATH_LENGTH, DEAD_END_PROBABILITY, MAX_ROOMS);
             unlockDungeon();
         });

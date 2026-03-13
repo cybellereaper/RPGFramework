@@ -31,12 +31,14 @@ import java.util.logging.Level;
 
 public final class RPGFramework extends JavaPlugin {
 
+
+
     private static final String HOLOGRAM_WARNING_MESSAGE =
             "Neither HolographicDisplays nor DecentHolograms was found.";
     private static final String HOLOGRAM_WARNING_DETAILS =
             "This is a non-fatal issue. Damage numbers will not be shown when hitting mobs.";
 
-    private static RPGFramework instance;
+    private static RPGFramework plugin;
 
     public static boolean useHolographicDisplays = false;
     public static boolean useDecentHolograms = false;
@@ -53,14 +55,14 @@ public final class RPGFramework extends JavaPlugin {
         plugin.getLogger().log(level, color + message);
     }
 
-    public static RPGFramework getInstance() {
-        return instance;
+    public static RPGFramework getPlugin() {
+        return plugin;
     }
 
     @Override
     public void onEnable() {
         long startupStartTimeMillis = System.currentTimeMillis();
-        instance = this;
+        plugin = this;
 
         initializeCoreSystems();
         registerListeners();
@@ -152,6 +154,6 @@ public final class RPGFramework extends JavaPlugin {
     }
 
     private static RPGFramework getRequiredInstance() {
-        return Objects.requireNonNull(instance, "RPGFramework has not been initialized yet.");
+        return Objects.requireNonNull(plugin, "RPGFramework has not been initialized yet.");
     }
 }
