@@ -13,177 +13,169 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 
-/**
- * The bard class casts powerful aura buffs to themselves and their party.
- *
- * @author Sugaku
- */
 public class BardClass extends AbstractClass {
 
-    /**
-     * A short enum of bard buffs to help keep track of.
-     *
-     * @author Sugaku
-     */
-    private enum BardBuffs {
+    private enum Ability {
+        HYM,
+        LIFE_OF_MUSIC
+    }
 
-        /**
-         * {@link org.bukkit.potion.PotionEffectType#REGENERATION}
-         */
+    private enum BardBuff {
         REGENERATION(ChatColor.LIGHT_PURPLE + "Regeneration", PotionEffectType.REGENERATION),
-
-        /**
-         * {@link org.bukkit.potion.PotionEffectType#SPEED}
-         */
         SWIFTNESS(ChatColor.AQUA + "Swiftness", PotionEffectType.SPEED),
-
-        /**
-         * {@link org.bukkit.potion.PotionEffectType#STRENGTH}
-         */
         STRENGTH(ChatColor.RED + "Strength", PotionEffectType.STRENGTH);
 
-        /**
-         * The text to display this buff as.
-         */
-        private final String display;
+        private final String displayName;
+        private final PotionEffectType potionEffectType;
 
-        /**
-         * The PotionEffectType that this buff represents.
-         */
-        private final PotionEffectType type;
-
-        /**
-         * Creates a new BardBuff with the given display name and potion buff type.
-         *
-         * @param display The string to display this buff as.
-         * @param type    The potion type that this buff gives.
-         */
-        BardBuffs (String display, PotionEffectType type) {
-            this.display = display;
-            this.type = type;
+        BardBuff(String displayName, PotionEffectType potionEffectType) {
+            this.displayName = displayName;
+            this.potionEffectType = potionEffectType;
         }
 
-        /**
-         * Returns this buff in a nicely formatted way to display to players.
-         *
-         * @return The string formatted version of this buff.
-         */
-        public String toString () {
-            return display;
+        public String getDisplayName() {
+            return displayName;
         }
 
-        /**
-         * An accessor method to get the PotionEffectType of the current buff.
-         *
-         * @return The current PotionEffect.
-         */
-        public PotionEffectType getType () {
-            return type;
+        public PotionEffectType getPotionEffectType() {
+            return potionEffectType;
         }
-    };
 
-    /**
-     * A short enum of ability names to better keep track of cooldowns.
-     *
-     * @author Sugaku
-     */
-    private enum Abilities {
-
-        /**
-         * Hym is the bard's cast ability. It has a 60s cooldown by default.
-         */
-        HYM,
-
-        /**
-         * The bard's revive passive.
-         */
-        LIFE_OF_MUSIC;
+        public BardBuff next() {
+            return switch (this) {
+                case REGENERATION -> SWIFTNESS;
+                case SWIFTNESS -> STRENGTH;
+                case STRENGTH -> REGENERATION;
+            };
+        }
     }
 
-    /**
-     * The buff this bard currently has selected.
-     */
-    private BardBuffs currentBuff = BardBuffs.REGENERATION;
+    private static final Material CLASS_ITEM = Material.NOTE_BLOCK;
 
-    /**
-     * Creates a new AbstractClass object which is specific to the given player.
-     *
-     * @param p The player this class is specific to.
-     */
-    public BardClass (RpgPlayer p) {
-        super(p);
-        Cooldown[] cds = new Cooldown[2];
-        cds[Abilities.HYM.ordinal()] = new Cooldown(30);
-        cds[Abilities.LIFE_OF_MUSIC.ordinal()] = new Cooldown(300);
-        setCooldowns(cds);
-        setClassItems(Material.NOTE_BLOCK);
+    private static final int HYM_COOLDOWN_SECONDS = 30;
+    private static final int LIFE_OF_MUSIC_COOLDOWN_SECONDS = 300;
+
+    private static final int HYM_DURATION_SECONDS = 45;
+    private static final int HYM_AMPLIFIER = 1;
+
+    private static final double LIFE_OF_MUSIC_HEAL_AMOUNT = 10.0;
+    private static final int LIFE_OF_MUSIC_DURATION_SECONDS = 10;
+    private static final int LIFE_OF_MUSIC_AMPLIFIER = 2;
+
+    private static final float TOTEM_SOUND_VOLUME = 0.8f;
+    private static final float TOTEM_SOUND_PITCH = 1.0f;
+
+    private static final String BLOCK_PLACEMENT_WARNING = "Shift + right click if you are trying to place that block.";
+    private static final String HYM_CAST_MESSAGE = ChatColor.GREEN + "You've used hym!";
+    private static final String LIFE_OF_MUSIC_CAST_MESSAGE =
+            ChatColor.GREEN + "You've used " + ChatColor.GOLD + "A Life of Music" + ChatColor.GREEN + "!";
+    private static final String HYM_BROADCAST_SUFFIX = ChatColor.GREEN + " has used hym!";
+
+    private BardBuff selectedBuff = BardBuff.REGENERATION;
+
+    public BardClass(RpgPlayer player) {
+        super(player);
+        setCooldowns(createCooldowns());
+        setClassItems(CLASS_ITEM);
     }
 
-    /**
-     * Called whenever a player right-clicks while holding a class item. To reach this method, the player must be
-     * holding a class item. No promises are made if they're wearing armor or not.
-     *
-     * @param event The PlayerInteractEvent that lead to this method being called.
-     * @param type  The type of material that was used in this cast.
-     */
     @Override
-    public void onRightClickCast (PlayerInteractEvent event, Material type) {
-        Player player = event.getPlayer();
-        if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (!player.isSneaking()) {
-                event.setCancelled(true);
-                send("Shift + right click if you are trying to place that block.");
-            } else return;
+    public void onRightClickCast(PlayerInteractEvent event, Material type) {
+        if (shouldPreventBlockPlacement(event)) {
+            return;
         }
-        switch (currentBuff) {
-            case REGENERATION -> currentBuff = BardBuffs.SWIFTNESS;
-            case SWIFTNESS -> currentBuff = BardBuffs.STRENGTH;
-            case STRENGTH -> currentBuff = BardBuffs.REGENERATION;
-        }
-        send(currentBuff.toString());
+
+        cycleSelectedBuff();
+        send(selectedBuff.getDisplayName());
     }
 
-    /**
-     * Called whenever a player left-clicks while holding a class item. To reach this method, the player must be holding
-     * a class item. No promises are made if they're wearing armor or not.
-     *
-     * @param event The PlayerInteractEvent that lead to this method being called.
-     * @param type  The type of material that was used in this cast.
-     */
     @Override
-    public void onLeftClickCast (PlayerInteractEvent event, Material type) {
-        if (offCooldown(Abilities.HYM.ordinal())) {
-            send(ChatColor.GREEN + "You've used hym!");
-            RpgPlayer player = getPlayer();
-            List<RpgPlayer> players = player.friendlyCasterTargets();
-            String username = player.getPlayerRarity() + player.getName();
-            for (RpgPlayer rpg : players) {
-                rpg.addPotionEffect(currentBuff.getType(), 45 * 20, 1);
-                rpg.sendMessage(username + ChatColor.GREEN + " has used hym!");
-            }
-            getCooldowns()[Abilities.HYM.ordinal()].restart();
+    public void onLeftClickCast(PlayerInteractEvent event, Material type) {
+        if (!isAbilityReady(Ability.HYM)) {
+            return;
         }
+
+        RpgPlayer bard = getPlayer();
+        List<RpgPlayer> allies = bard.friendlyCasterTargets();
+        String casterDisplayName = bard.getPlayerRarity() + bard.getName();
+
+        send(HYM_CAST_MESSAGE);
+
+        for (RpgPlayer ally : allies) {
+            applyHymBuff(ally);
+            ally.sendMessage(casterDisplayName + HYM_BROADCAST_SUFFIX);
+        }
+
+        restartCooldown(Ability.HYM);
     }
 
-    /**
-     * Called when the class user has 'died'.
-     *
-     * @return Whether a death should be respected or not.
-     */
     @Override
-    public boolean onDeath () {
-        if(offCooldown(Abilities.LIFE_OF_MUSIC.ordinal())) {
-            send(ChatColor.GREEN + "You've used " + ChatColor.GOLD + "A Life of Music" + ChatColor.GREEN + "!");
-            RpgPlayer rpg = getPlayer();
-            Player player = rpg.getBukkitPlayer();;
-            player.getWorld().playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 0.8f, 1.0f);
-            rpg.heal(10.0);
-            rpg.addPotionEffect(PotionEffectType.REGENERATION, 10 * 20, 2);
-            rpg.addPotionEffect(PotionEffectType.SPEED, 10 * 20, 2);
-            rpg.addPotionEffect(PotionEffectType.STRENGTH, 10 * 20, 2);
-            getCooldowns()[Abilities.LIFE_OF_MUSIC.ordinal()].restart();
+    public boolean onDeath() {
+        if (!isAbilityReady(Ability.LIFE_OF_MUSIC)) {
+            return true;
+        }
+
+        RpgPlayer bard = getPlayer();
+        Player player = bard.getBukkitPlayer();
+
+        send(LIFE_OF_MUSIC_CAST_MESSAGE);
+        player.getWorld().playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, TOTEM_SOUND_VOLUME, TOTEM_SOUND_PITCH);
+
+        bard.heal(LIFE_OF_MUSIC_HEAL_AMOUNT);
+        applyLifeOfMusicBuffs(bard);
+        restartCooldown(Ability.LIFE_OF_MUSIC);
+
+        return false;
+    }
+
+    private boolean shouldPreventBlockPlacement(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return false;
         }
+
+        if (event.getPlayer().isSneaking()) {
+            return false;
+        }
+
+        event.setCancelled(true);
+        send(BLOCK_PLACEMENT_WARNING);
         return true;
+    }
+
+    private void cycleSelectedBuff() {
+        selectedBuff = selectedBuff.next();
+    }
+
+    private void applyHymBuff(RpgPlayer target) {
+        target.addPotionEffect(
+                selectedBuff.getPotionEffectType(),
+                toTicks(HYM_DURATION_SECONDS),
+                HYM_AMPLIFIER
+        );
+    }
+
+    private void applyLifeOfMusicBuffs(RpgPlayer target) {
+        target.addPotionEffect(PotionEffectType.REGENERATION, toTicks(LIFE_OF_MUSIC_DURATION_SECONDS), LIFE_OF_MUSIC_AMPLIFIER);
+        target.addPotionEffect(PotionEffectType.SPEED, toTicks(LIFE_OF_MUSIC_DURATION_SECONDS), LIFE_OF_MUSIC_AMPLIFIER);
+        target.addPotionEffect(PotionEffectType.STRENGTH, toTicks(LIFE_OF_MUSIC_DURATION_SECONDS), LIFE_OF_MUSIC_AMPLIFIER);
+    }
+
+    private boolean isAbilityReady(Ability ability) {
+        return offCooldown(ability.ordinal());
+    }
+
+    private void restartCooldown(Ability ability) {
+        getCooldowns()[ability.ordinal()].restart();
+    }
+
+    private int toTicks(int seconds) {
+        return seconds * 20;
+    }
+
+    private static Cooldown[] createCooldowns() {
+        Cooldown[] cooldowns = new Cooldown[Ability.values().length];
+        cooldowns[Ability.HYM.ordinal()] = new Cooldown(HYM_COOLDOWN_SECONDS);
+        cooldowns[Ability.LIFE_OF_MUSIC.ordinal()] = new Cooldown(LIFE_OF_MUSIC_COOLDOWN_SECONDS);
+        return cooldowns;
     }
 }
