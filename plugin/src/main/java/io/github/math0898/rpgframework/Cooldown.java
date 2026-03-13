@@ -1,33 +1,48 @@
 package io.github.math0898.rpgframework;
 
-public class Cooldown { // todo: Javadoc.
+public final class Cooldown {
 
-    private final float duration;
+    private static final long MILLIS_PER_SECOND = 1000L;
 
-    private long startTime;
+    private final long durationSeconds;
+    private long startTimeMillis;
+    private boolean completedEarly;
 
-    private boolean complete = false;
-
-    public Cooldown(float duration) {
-        startTime = System.currentTimeMillis();
-        this.duration = duration;
+    public Cooldown(float durationSeconds) {
+        this((long) durationSeconds);
     }
 
-    public float getRemaining() { return duration - Math.floorDiv(System.currentTimeMillis() - startTime, 1000); }
+    public Cooldown(long durationSeconds) {
+        if (durationSeconds < 0) {
+            throw new IllegalArgumentException("Cooldown duration cannot be negative.");
+        }
 
-    /**
-     * Has the cooldown finished its duration and is the ability tied to this cooldown ready for use again.
-     *
-     * @return True if the cooldown duration has elapsed.
-     */
-    public boolean isComplete () {
-        return ((getRemaining() < 0) || complete);
+        this.durationSeconds = durationSeconds;
+        this.startTimeMillis = System.currentTimeMillis();
+        this.completedEarly = false;
+    }
+
+    public float getRemaining() {
+        long elapsedSeconds = getElapsedSeconds();
+        long remainingSeconds = durationSeconds - elapsedSeconds;
+        return remainingSeconds;
+    }
+
+    public boolean isComplete() {
+        return completedEarly || getRemaining() <= 0;
     }
 
     public void restart() {
-        startTime = System.currentTimeMillis();
-        complete = false;
+        startTimeMillis = System.currentTimeMillis();
+        completedEarly = false;
     }
 
-    public void setComplete() { complete = true; }
+    public void setComplete() {
+        completedEarly = true;
+    }
+
+    private long getElapsedSeconds() {
+        long elapsedMillis = System.currentTimeMillis() - startTimeMillis;
+        return elapsedMillis / MILLIS_PER_SECOND;
+    }
 }
