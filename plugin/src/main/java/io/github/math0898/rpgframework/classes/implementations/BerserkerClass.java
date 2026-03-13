@@ -3,8 +3,8 @@ package io.github.math0898.rpgframework.classes.implementations;
 import io.github.math0898.rpgframework.Cooldown;
 import io.github.math0898.rpgframework.RpgPlayer;
 import io.github.math0898.rpgframework.classes.AbstractClass;
-import io.github.math0898.rpgframework.damage.events.AdvancedDamageEvent;
 import io.github.math0898.rpgframework.damage.DamageType;
+import io.github.math0898.rpgframework.damage.events.AdvancedDamageEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -13,161 +13,212 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 
-/**
- * The berserker class deals significant damage to enemies using an axe, has superior regeneration capabilities and a
- * unique lifesteal mechanic.
- *
- * @author Sugaku
- */
-public class BerserkerClass extends AbstractClass { // todo: Re-add regeneration bonus.
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Set;
 
-    /**
-     * An enum which represents the Berserker's abilities.
-     *
-     * @author Sugaku
-     */
-    enum Abilities {
+public class BerserkerClass extends AbstractClass {
 
-        /**
-         * The haste ability grants the user speed 2 for a short time.
-         */
+    private enum Ability {
         HASTE,
-
-        /**
-         * The rage ability gives the user strength 2.
-         */
         RAGE,
-
-        /**
-         * The indomitable spirit ability keeps the berserker alive after death to deal even more damage.
-         */
-        INDOMITABLE_SPIRIT;
+        INDOMITABLE_SPIRIT
     }
 
-    /**
-     * Creates a new AbstractClass object which is specific to the given player.
-     *
-     * @param p The player this class is specific to.
-     */
-    public BerserkerClass (RpgPlayer p) {
-        super(p);
-        Cooldown[] cds = new Cooldown[3];
-        cds[Abilities.HASTE.ordinal()] = new Cooldown(30);
-        cds[Abilities.RAGE.ordinal()] = new Cooldown(60);
-        cds[Abilities.INDOMITABLE_SPIRIT.ordinal()] = new Cooldown(180);
-        setCooldowns(cds);
-        setClassItems(Material.ROTTEN_FLESH);
+    private static final Material CLASS_ITEM = Material.ROTTEN_FLESH;
+    private static final String ARMOR_REQUIRED_MESSAGE = "Use leather middle pieces to use abilities.";
+
+    private static final int HASTE_COOLDOWN_SECONDS = 30;
+    private static final int HASTE_DURATION_SECONDS = 10;
+    private static final int HASTE_AMPLIFIER = 2;
+
+    private static final int RAGE_COOLDOWN_SECONDS = 60;
+    private static final int RAGE_DURATION_SECONDS = 10;
+    private static final int RAGE_AMPLIFIER = 2;
+
+    private static final int INDOMITABLE_SPIRIT_COOLDOWN_SECONDS = 180;
+    private static final int INDOMITABLE_SPIRIT_ACTIVE_SECONDS = 5;
+    private static final int INDOMITABLE_SPIRIT_STRENGTH_DURATION_SECONDS = 5;
+    private static final int INDOMITABLE_SPIRIT_STRENGTH_AMPLIFIER = 3;
+
+    private static final double DEFENSIVE_DAMAGE_REDUCTION = 10.0;
+    private static final double BONUS_AXE_DAMAGE = 10.0;
+
+    private static final Set<Material> VALID_AXES = Set.of(
+            Material.WOODEN_AXE,
+            Material.STONE_AXE,
+            Material.IRON_AXE,
+            Material.DIAMOND_AXE,
+            Material.NETHERITE_AXE,
+            Material.GOLDEN_AXE
+    );
+
+    private static final Map<EquipmentSlot, Material> REQUIRED_ARMOR = createRequiredArmor();
+
+    public BerserkerClass(RpgPlayer player) {
+        super(player);
+        setCooldowns(createCooldowns());
+        setClassItems(CLASS_ITEM);
     }
 
-    /**
-     * Called whenever a player left-clicks while holding a class item. To reach this method, the player must be holding
-     * a class item. No promises are made if they're wearing armor or not.
-     *
-     * @param event The PlayerInteractEvent that lead to this method being called.
-     * @param type  The type of material that was used in this cast.
-     */
     @Override
-    public void onLeftClickCast (PlayerInteractEvent event, Material type) {
-        if (!correctArmor()) send("Use leather middle pieces to use abilities.");
-        else if (offCooldown(Abilities.RAGE.ordinal())) {
-            send(ChatColor.GREEN + "You've used rage!");
-            getPlayer().addPotionEffect(PotionEffectType.STRENGTH, 10 * 20, 2);
-            getCooldowns()[Abilities.RAGE.ordinal()].restart();
+    public void onLeftClickCast(PlayerInteractEvent event, Material type) {
+        if (!isClassItem(type) || !canUseAbilities()) {
+            return;
         }
+
+        castRage();
     }
 
-    /**
-     * Called whenever a player right-clicks while holding a class item. To reach this method, the player must be
-     * holding a class item. No promises are made if they're wearing armor or not.
-     *
-     * @param event The PlayerInteractEvent that lead to this method being called.
-     * @param type  The type of material that was used in this cast.
-     */
     @Override
-    public void onRightClickCast (PlayerInteractEvent event, Material type) {
-        if (!correctArmor()) send("Use leather middle pieces to use abilities.");
-        else if (offCooldown(Abilities.HASTE.ordinal())) {
-            send(ChatColor.GREEN + "You've used haste!");
-            getPlayer().addPotionEffect(PotionEffectType.SPEED, 10 * 20, 2);
-            getCooldowns()[Abilities.HASTE.ordinal()].restart();
+    public void onRightClickCast(PlayerInteractEvent event, Material type) {
+        if (!isClassItem(type) || !canUseAbilities()) {
+            return;
         }
+
+        castHaste();
     }
 
-    /**
-     * Called when the class user has 'died'.
-     *
-     * @return Whether a death should be respected or not.
-     */
     @Override
-    public boolean onDeath () {
-        if (offCooldown(Abilities.INDOMITABLE_SPIRIT.ordinal())) {
-            send(ChatColor.GREEN + "You've used " + ChatColor.GOLD + "Indomitable Spirit" + ChatColor.GREEN + "!");
-            RpgPlayer rpg = getPlayer();
-            Player player = rpg.getBukkitPlayer();
-            player.getWorld().playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 0.8f, 1.0f);
-            rpg.addPotionEffect(PotionEffectType.STRENGTH, 5 * 20, 3);
-            getCooldowns()[Abilities.INDOMITABLE_SPIRIT.ordinal()].restart();
+    public boolean onDeath() {
+        if (!isAbilityReady(Ability.INDOMITABLE_SPIRIT)) {
+            return true;
+        }
+
+        RpgPlayer rpgPlayer = getPlayer();
+        Player player = rpgPlayer.getBukkitPlayer();
+
+        send(ChatColor.GREEN + "You've used " + ChatColor.GOLD + "Indomitable Spirit" + ChatColor.GREEN + "!");
+        player.getWorld().playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 0.8f, 1.0f);
+        rpgPlayer.addPotionEffect(
+                PotionEffectType.STRENGTH,
+                toTicks(INDOMITABLE_SPIRIT_STRENGTH_DURATION_SECONDS),
+                INDOMITABLE_SPIRIT_STRENGTH_AMPLIFIER
+        );
+        restartCooldown(Ability.INDOMITABLE_SPIRIT);
+
+        return false;
+    }
+
+    @Override
+    public boolean correctArmor(EquipmentSlot slot) {
+        Material requiredMaterial = REQUIRED_ARMOR.get(slot);
+        if (requiredMaterial == null) {
+            return true;
+        }
+
+        EntityEquipment equipment = getPlayer().getBukkitPlayer().getEquipment();
+        if (equipment == null) {
             return false;
         }
-        return true;
+
+        ItemStack equippedItem = equipment.getItem(slot);
+        return equippedItem != null && equippedItem.getType() == requiredMaterial;
     }
 
-    /**
-     * Checks a specific slot to see if this player is wearing their class armor or not.
-     *
-     * @param slot The slot to check to see if it is the correct armor type.
-     * @return True if the player is wearing the correct armor for that slot.
-     */
     @Override
-    public boolean correctArmor (EquipmentSlot slot) {
+    public void damaged(AdvancedDamageEvent event) {
+        if (correctArmor()) {
+            event.addDamage(-DEFENSIVE_DAMAGE_REDUCTION, event.getPrimaryDamage());
+        }
+
+        if (isIndomitableSpiritActive()) {
+            event.setCancelled(true);
+        }
+    }
+
+    @Override
+    public void attack(AdvancedDamageEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity)) {
+            return;
+        }
+
+        if (!event.getPrimaryDamage().isPhysical()) {
+            return;
+        }
+
+        if (!isUsingAxe()) {
+            return;
+        }
+
+        event.addDamage(BONUS_AXE_DAMAGE, DamageType.SLASH);
+    }
+
+    private void castRage() {
+        if (!isAbilityReady(Ability.RAGE)) {
+            return;
+        }
+
+        send(ChatColor.GREEN + "You've used rage!");
+        getPlayer().addPotionEffect(PotionEffectType.STRENGTH, toTicks(RAGE_DURATION_SECONDS), RAGE_AMPLIFIER);
+        restartCooldown(Ability.RAGE);
+    }
+
+    private void castHaste() {
+        if (!isAbilityReady(Ability.HASTE)) {
+            return;
+        }
+
+        send(ChatColor.GREEN + "You've used haste!");
+        getPlayer().addPotionEffect(PotionEffectType.SPEED, toTicks(HASTE_DURATION_SECONDS), HASTE_AMPLIFIER);
+        restartCooldown(Ability.HASTE);
+    }
+
+    private boolean canUseAbilities() {
+        if (correctArmor()) {
+            return true;
+        }
+
+        send(ARMOR_REQUIRED_MESSAGE);
+        return false;
+    }
+
+    private boolean isClassItem(Material material) {
+        return material == CLASS_ITEM;
+    }
+
+    private boolean isUsingAxe() {
         EntityEquipment equipment = getPlayer().getBukkitPlayer().getEquipment();
-        if (equipment == null) return false;
-        Material type = equipment.getItem(slot).getType();
-        return switch (slot) {
-            case CHEST -> type == Material.LEATHER_CHESTPLATE;
-            case LEGS -> type == Material.LEATHER_LEGGINGS;
-            default -> true;
-        };
+        if (equipment == null) {
+            return false;
+        }
+
+        ItemStack heldItem = equipment.getItem(EquipmentSlot.HAND);
+        return heldItem != null && VALID_AXES.contains(heldItem.getType());
     }
 
-    /**
-     * A Utility method to determine if the Berserker is using the correct weapon.
-     * Can probably be abstracted to AbstractClass.
-     */
-    private boolean correctWeapon () {
-        EntityEquipment equipment = getPlayer().getBukkitPlayer().getEquipment();
-        if (equipment == null) return false;
-        Material type = equipment.getItem(EquipmentSlot.HAND).getType();
-        return switch (type) {
-            case WOODEN_AXE, STONE_AXE, IRON_AXE, DIAMOND_AXE, NETHERITE_AXE, GOLDEN_AXE -> true;
-            default -> false;
-        };
+    private boolean isAbilityReady(Ability ability) {
+        return offCooldown(ability.ordinal());
     }
 
-    /**
-     * Called whenever this DamageModifier is relevant on a defensive front.
-     *
-     * @param event The AdvancedDamageEvent to consider.
-     */
-    @Override
-    public void damaged (AdvancedDamageEvent event) {
-        if (correctArmor())
-            event.addDamage(-10.0, event.getPrimaryDamage());
-        if (getCooldowns()[Abilities.INDOMITABLE_SPIRIT.ordinal()].getRemaining() >= 175) event.setCancelled(true);
+    private void restartCooldown(Ability ability) {
+        getCooldowns()[ability.ordinal()].restart();
     }
 
-    /**
-     * Called whenever this DamageModifier is relevant on an offensive front.
-     *
-     * @param event The AdvancedDamageEvent to consider.
-     */
-    @Override
-    public void attack (AdvancedDamageEvent event) {
-        if (event.getEntity() instanceof LivingEntity)
-            if (event.getPrimaryDamage().isPhysical())
-                if (correctWeapon())
-                    event.addDamage(10.0, DamageType.SLASH);
+    private boolean isIndomitableSpiritActive() {
+        int remainingCooldown = getCooldowns()[Ability.INDOMITABLE_SPIRIT.ordinal()].getRemaining();
+        return remainingCooldown >= INDOMITABLE_SPIRIT_COOLDOWN_SECONDS - INDOMITABLE_SPIRIT_ACTIVE_SECONDS;
+    }
+
+    private int toTicks(int seconds) {
+        return seconds * 20;
+    }
+
+    private static Cooldown[] createCooldowns() {
+        Cooldown[] cooldowns = new Cooldown[Ability.values().length];
+        cooldowns[Ability.HASTE.ordinal()] = new Cooldown(HASTE_COOLDOWN_SECONDS);
+        cooldowns[Ability.RAGE.ordinal()] = new Cooldown(RAGE_COOLDOWN_SECONDS);
+        cooldowns[Ability.INDOMITABLE_SPIRIT.ordinal()] = new Cooldown(INDOMITABLE_SPIRIT_COOLDOWN_SECONDS);
+        return cooldowns;
+    }
+
+    private static Map<EquipmentSlot, Material> createRequiredArmor() {
+        Map<EquipmentSlot, Material> requiredArmor = new EnumMap<>(EquipmentSlot.class);
+        requiredArmor.put(EquipmentSlot.CHEST, Material.LEATHER_CHESTPLATE);
+        requiredArmor.put(EquipmentSlot.LEGS, Material.LEATHER_LEGGINGS);
+        return requiredArmor;
     }
 }
