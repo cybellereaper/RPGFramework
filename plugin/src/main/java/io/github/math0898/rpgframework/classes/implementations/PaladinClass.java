@@ -3,175 +3,256 @@ package io.github.math0898.rpgframework.classes.implementations;
 import io.github.math0898.rpgframework.Cooldown;
 import io.github.math0898.rpgframework.RpgPlayer;
 import io.github.math0898.rpgframework.classes.AbstractClass;
-import io.github.math0898.rpgframework.damage.events.AdvancedDamageEvent;
 import io.github.math0898.rpgframework.damage.DamageResistance;
 import io.github.math0898.rpgframework.damage.DamageType;
+import io.github.math0898.rpgframework.damage.events.AdvancedDamageEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.potion.PotionEffectType;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
-import static org.bukkit.potion.PotionEffectType.*;
-
-/**
- * The Paladin class has strong healing abilities and damage nullification abilities.
- *
- * @author Sugaku
- */
 public class PaladinClass extends AbstractClass {
 
-    /**
-     * An enum with defines the Paladin's abilities. Used to make cooldowns more readable.
-     *
-     * @author Sugaku
-     */
-    private enum Abilities {
-
-        /**
-         * Cleanses the Paladin nullifying negative effects and granting a large amount of health.
-         */
+    private enum Ability {
         PURIFY,
-
-        /**
-         * Gives the Paladin and party a strong regeneration effect.
-         */
         MEND,
-
-        /**
-         * A powerful resurrection effect that heals the paladin a tremendous amount.
-         */
         PROTECTION_OF_THE_HEALER
     }
 
-    /**
-     * Creates a new AbstractClass object which is specific to the given player.
-     *
-     * @param p The player this class is specific to.
-     */
-    public PaladinClass (RpgPlayer p) {
-        super(p);
-        Cooldown[] cds = new Cooldown[3];
-        cds[Abilities.MEND.ordinal()] = new Cooldown(60);
-        cds[Abilities.PURIFY.ordinal()] = new Cooldown(45);
-        cds[Abilities.PROTECTION_OF_THE_HEALER.ordinal()] = new Cooldown(300);
-        setCooldowns(cds);
-        setClassItems(Material.GOLDEN_SHOVEL);
+    private static final Material CLASS_ITEM = Material.GOLDEN_SHOVEL;
+    private static final String ARMOR_REQUIRED_MESSAGE = "Use full golden armor to use paladin spells.";
+
+    private static final int MEND_COOLDOWN_SECONDS = 60;
+    private static final int MEND_DURATION_SECONDS = 15;
+    private static final int MEND_AMPLIFIER = 3;
+
+    private static final int PURIFY_COOLDOWN_SECONDS = 45;
+    private static final double PURIFY_HEAL_AMOUNT = 5.0;
+
+    private static final int PROTECTION_COOLDOWN_SECONDS = 300;
+    private static final int PROTECTION_DURATION_SECONDS = 10;
+    private static final int PROTECTION_REGEN_AMPLIFIER = 4;
+    private static final int PROTECTION_HEALTH_BOOST_AMPLIFIER = 1;
+    private static final double PROTECTION_HEAL_AMOUNT = 2.0;
+
+    private static final DamageType[] PALADIN_RESISTANCES = {
+            DamageType.HOLY,
+            DamageType.IMPACT,
+            DamageType.SLASH,
+            DamageType.UNSPECIFIED,
+            DamageType.PUNCTURE
+    };
+
+    private static final PotionEffectType[] NEGATIVE_EFFECTS_TO_CLEANSE = {
+            PotionEffectType.BLINDNESS,
+            PotionEffectType.BAD_OMEN,
+            PotionEffectType.NAUSEA,
+            PotionEffectType.DARKNESS,
+            PotionEffectType.INSTANT_DAMAGE,
+            PotionEffectType.HUNGER,
+            PotionEffectType.POISON,
+            PotionEffectType.SLOWNESS,
+            PotionEffectType.LEVITATION,
+            PotionEffectType.MINING_FATIGUE,
+            PotionEffectType.UNLUCK,
+            PotionEffectType.WEAKNESS,
+            PotionEffectType.WITHER
+    };
+
+    private static final Map<EquipmentSlot, Material> REQUIRED_ARMOR_BY_SLOT = createRequiredArmorBySlot();
+
+    public PaladinClass(RpgPlayer player) {
+        super(player);
+        setCooldowns(createCooldowns());
+        setClassItems(CLASS_ITEM);
     }
 
-    /**
-     * Called whenever a player left-clicks while holding a class item. To reach this method, the player must be holding
-     * a class item. No promises are made if they're wearing armor or not.
-     *
-     * @param event The PlayerInteractEvent that lead to this method being called.
-     * @param type  The type of material that was used in this cast.
-     */
-    public void onLeftClickCast (PlayerInteractEvent event, Material type) {
-        if (!correctArmor()) send("Use full golden armor to use paladin spells.");
-        else if (offCooldown(Abilities.MEND.ordinal())) {
-            send(ChatColor.GREEN + "You've used mend!");
-            RpgPlayer player = getPlayer();
-            List<RpgPlayer> toApply = player.friendlyCasterTargets();
-            String username = player.getPlayerRarity() + player.getName();
-            for (RpgPlayer rpg: toApply) {
-                rpg.addPotionEffect(REGENERATION, 15 * 20, 3);
-                rpg.sendMessage(username + ChatColor.GREEN + " has used mend!");
-            }
-            getCooldowns()[Abilities.MEND.ordinal()].restart();
-        }
-    }
-
-    /**
-     * Called whenever a player right-clicks while holding a class item. To reach this method, the player must be
-     * holding a class item. No promises are made if they're wearing armor or not.
-     *
-     * @param event The PlayerInteractEvent that lead to this method being called.
-     * @param type  The type of material that was used in this cast.
-     */
-    public void onRightClickCast (PlayerInteractEvent event, Material type) {
-        if (!correctArmor()) send("Use full golden armor to use paladin spells.");
-        else if (offCooldown(Abilities.PURIFY.ordinal())) {
-            send(ChatColor.GREEN + "You've used purify!");
-            RpgPlayer player = getPlayer();
-            List<RpgPlayer> toApply = player.friendlyCasterTargets();
-            String username = player.getPlayerRarity() + player.getName();
-            for (RpgPlayer rpg: toApply) {
-                rpg.heal(5.0);
-                rpg.getBukkitPlayer().setFireTicks(0);
-                rpg.cleanseEffects(BLINDNESS, BAD_OMEN, NAUSEA, DARKNESS, INSTANT_DAMAGE, HUNGER, POISON, SLOWNESS, LEVITATION,
-                        MINING_FATIGUE, UNLUCK, WEAKNESS, WITHER);
-                rpg.sendMessage(username + ChatColor.GREEN + " has used purify!");
-            }
-            getCooldowns()[Abilities.PURIFY.ordinal()].restart();
-        }
-    }
-
-    /**
-     * Called when the class user has 'died'.
-     *
-     * @return Whether a death should be respected or not.
-     */
     @Override
-    public boolean onDeath () {
-        if (offCooldown(Abilities.PROTECTION_OF_THE_HEALER.ordinal())) {
-            send(ChatColor.GREEN + "You've used " + ChatColor.GOLD + "Protection of the Healer" + ChatColor.GREEN + "!");
-            RpgPlayer player = getPlayer();
-            player.getBukkitPlayer().getWorld().playSound(player.getBukkitPlayer().getLocation(), Sound.ITEM_TOTEM_USE, 0.8f, 1.0f);
-            List<RpgPlayer> toApply = player.friendlyCasterTargets();
-            String username = player.getPlayerRarity() + player.getName();
-            for (RpgPlayer rpg: toApply) {
-                rpg.addPotionEffect(REGENERATION, 10 * 20, 4);
-                rpg.addPotionEffect(HEALTH_BOOST, 10 * 20, 1);
-                rpg.heal(2.0);
-                rpg.sendMessage(username + ChatColor.GREEN + " has used " + ChatColor.GOLD + "Protection of the Healer" + ChatColor.GREEN + "!");
-            }
-            getCooldowns()[Abilities.PROTECTION_OF_THE_HEALER.ordinal()].restart();
+    public void onLeftClickCast(PlayerInteractEvent event, Material type) {
+        if (!isSupportedClassItem(type) || !canCastSpells()) {
+            return;
+        }
+
+        castMend();
+    }
+
+    @Override
+    public void onRightClickCast(PlayerInteractEvent event, Material type) {
+        if (!isSupportedClassItem(type) || !canCastSpells()) {
+            return;
+        }
+
+        castPurify();
+    }
+
+    @Override
+    public boolean onDeath() {
+        if (!isAbilityReady(Ability.PROTECTION_OF_THE_HEALER)) {
+            return true;
+        }
+
+        RpgPlayer paladin = getPlayer();
+        Player bukkitPlayer = paladin.getBukkitPlayer();
+        List<RpgPlayer> allies = paladin.friendlyCasterTargets();
+        String casterDisplayName = getCasterDisplayName();
+
+        send(ChatColor.GREEN + "You've used " + ChatColor.GOLD + "Protection of the Healer" + ChatColor.GREEN + "!");
+        bukkitPlayer.getWorld().playSound(bukkitPlayer.getLocation(), Sound.ITEM_TOTEM_USE, 0.8f, 1.0f);
+
+        for (RpgPlayer ally : allies) {
+            applyProtectionOfTheHealer(ally, casterDisplayName);
+        }
+
+        restartCooldown(Ability.PROTECTION_OF_THE_HEALER);
+        return false;
+    }
+
+    @Override
+    public boolean correctArmor(EquipmentSlot slot) {
+        Material requiredMaterial = REQUIRED_ARMOR_BY_SLOT.get(slot);
+        if (requiredMaterial == null) {
+            return true;
+        }
+
+        EntityEquipment equipment = getPlayer().getBukkitPlayer().getEquipment();
+        if (equipment == null || equipment.getItem(slot) == null) {
             return false;
         }
-        return true;
+
+        return equipment.getItem(slot).getType() == requiredMaterial;
     }
 
-    /**
-     * Checks a specific slot to see if this player is wearing their class armor or not.
-     *
-     * @param slot The slot to check to see if it is the correct armor type.
-     * @return True if the player is wearing the correct armor for that slot.
-     */
     @Override
-    public boolean correctArmor (EquipmentSlot slot) {
-        EntityEquipment equipment = getPlayer().getBukkitPlayer().getEquipment();
-        if (equipment == null) return false;
-        Material type = equipment.getItem(slot).getType();
-        return switch (slot) {
-            case HEAD -> type == Material.GOLDEN_HELMET;
-            case CHEST -> type == Material.GOLDEN_CHESTPLATE;
-            case LEGS -> type == Material.GOLDEN_LEGGINGS;
-            case FEET -> type == Material.GOLDEN_BOOTS;
-            default -> true;
-        };
+    public void damaged(AdvancedDamageEvent event) {
+        for (DamageType damageType : PALADIN_RESISTANCES) {
+            event.setResistance(damageType, DamageResistance.RESISTANCE);
+        }
     }
 
-    /**
-     * Called whenever this DamageModifier is relevant on a defensive front.
-     *
-     * @param event The AdvancedDamageEvent to consider.
-     */
     @Override
-    public void damaged (AdvancedDamageEvent event) {
-        for (DamageType type : new DamageType[]{DamageType.HOLY, DamageType.IMPACT, DamageType.SLASH, DamageType.UNSPECIFIED, DamageType.PUNCTURE})
-            event.setResistance(type, DamageResistance.RESISTANCE);
-    }
-
-    /**
-     * Called whenever this DamageModifier is relevant on an offensive front.
-     *
-     * @param event The AdvancedDamageEvent to consider.
-     */
-    @Override
-    public void attack (AdvancedDamageEvent event) {
+    public void attack(AdvancedDamageEvent event) {
         event.addDamage(-2.5, event.getPrimaryDamage());
+    }
+
+    private void castMend() {
+        if (!isAbilityReady(Ability.MEND)) {
+            return;
+        }
+
+        RpgPlayer paladin = getPlayer();
+        List<RpgPlayer> allies = paladin.friendlyCasterTargets();
+        String casterDisplayName = getCasterDisplayName();
+
+        send(ChatColor.GREEN + "You've used mend!");
+
+        for (RpgPlayer ally : allies) {
+            ally.addPotionEffect(
+                    PotionEffectType.REGENERATION,
+                    toTicks(MEND_DURATION_SECONDS),
+                    MEND_AMPLIFIER
+            );
+            ally.sendMessage(casterDisplayName + ChatColor.GREEN + " has used mend!");
+        }
+
+        restartCooldown(Ability.MEND);
+    }
+
+    private void castPurify() {
+        if (!isAbilityReady(Ability.PURIFY)) {
+            return;
+        }
+
+        RpgPlayer paladin = getPlayer();
+        List<RpgPlayer> allies = paladin.friendlyCasterTargets();
+        String casterDisplayName = getCasterDisplayName();
+
+        send(ChatColor.GREEN + "You've used purify!");
+
+        for (RpgPlayer ally : allies) {
+            ally.heal(PURIFY_HEAL_AMOUNT);
+            ally.getBukkitPlayer().setFireTicks(0);
+            ally.cleanseEffects(NEGATIVE_EFFECTS_TO_CLEANSE);
+            ally.sendMessage(casterDisplayName + ChatColor.GREEN + " has used purify!");
+        }
+
+        restartCooldown(Ability.PURIFY);
+    }
+
+    private void applyProtectionOfTheHealer(RpgPlayer ally, String casterDisplayName) {
+        ally.addPotionEffect(
+                PotionEffectType.REGENERATION,
+                toTicks(PROTECTION_DURATION_SECONDS),
+                PROTECTION_REGEN_AMPLIFIER
+        );
+        ally.addPotionEffect(
+                PotionEffectType.HEALTH_BOOST,
+                toTicks(PROTECTION_DURATION_SECONDS),
+                PROTECTION_HEALTH_BOOST_AMPLIFIER
+        );
+        ally.heal(PROTECTION_HEAL_AMOUNT);
+        ally.sendMessage(
+                casterDisplayName
+                        + ChatColor.GREEN
+                        + " has used "
+                        + ChatColor.GOLD
+                        + "Protection of the Healer"
+                        + ChatColor.GREEN
+                        + "!"
+        );
+    }
+
+    private boolean canCastSpells() {
+        if (correctArmor()) {
+            return true;
+        }
+
+        send(ARMOR_REQUIRED_MESSAGE);
+        return false;
+    }
+
+    private boolean isSupportedClassItem(Material material) {
+        return material == CLASS_ITEM;
+    }
+
+    private boolean isAbilityReady(Ability ability) {
+        return offCooldown(ability.ordinal());
+    }
+
+    private void restartCooldown(Ability ability) {
+        getCooldowns()[ability.ordinal()].restart();
+    }
+
+    private String getCasterDisplayName() {
+        RpgPlayer player = getPlayer();
+        return player.getPlayerRarity() + player.getName();
+    }
+
+    private int toTicks(int seconds) {
+        return seconds * 20;
+    }
+
+    private static Cooldown[] createCooldowns() {
+        Cooldown[] cooldowns = new Cooldown[Ability.values().length];
+        cooldowns[Ability.MEND.ordinal()] = new Cooldown(MEND_COOLDOWN_SECONDS);
+        cooldowns[Ability.PURIFY.ordinal()] = new Cooldown(PURIFY_COOLDOWN_SECONDS);
+        cooldowns[Ability.PROTECTION_OF_THE_HEALER.ordinal()] = new Cooldown(PROTECTION_COOLDOWN_SECONDS);
+        return cooldowns;
+    }
+
+    private static Map<EquipmentSlot, Material> createRequiredArmorBySlot() {
+        Map<EquipmentSlot, Material> armorBySlot = new EnumMap<>(EquipmentSlot.class);
+        armorBySlot.put(EquipmentSlot.HEAD, Material.GOLDEN_HELMET);
+        armorBySlot.put(EquipmentSlot.CHEST, Material.GOLDEN_CHESTPLATE);
+        armorBySlot.put(EquipmentSlot.LEGS, Material.GOLDEN_LEGGINGS);
+        armorBySlot.put(EquipmentSlot.FEET, Material.GOLDEN_BOOTS);
+        return armorBySlot;
     }
 }
