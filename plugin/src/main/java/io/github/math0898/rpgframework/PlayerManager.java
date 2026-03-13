@@ -1,8 +1,14 @@
 package io.github.math0898.rpgframework;
 
 import io.github.math0898.rpgframework.parties.Party;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,285 +22,318 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.potion.PotionEffect;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
-import static io.github.math0898.rpgframework.RPGFramework.plugin;
+import static io.github.math0898.rpgframework.RPGFramework.getInstance;
 
-/**
- * The PlayerManager does some listening to events and managing interactions with players. It's main purpose is to track
- * and provide the RpgPlayer equivalents to Bukkit's Player.
- * // todo: Update to utilize singleton design pattern.
- *
- * @author Sugaku
- */
-public class PlayerManager implements Listener {
+public final class PlayerManager implements Listener {
 
-    /**
-     * An array of death flavor messages.
-     */
-    private static final String[] DEATH_FLAVOR = {" was slain by ", " met an honorable death by ", " was bested by ", " lost in a fight against ", ", in an epic duel lost to ", " met their fate by the hands of "};
+    private static final String CONSOLE_PREFIX =
+            ChatColor.DARK_GRAY + "[" + ChatColor.DARK_GREEN + "RPG" + ChatColor.DARK_GRAY + "] "
+                    + "[" + ChatColor.LIGHT_PURPLE + "PlayMgr" + ChatColor.DARK_GRAY + "] ";
 
-    /**
-     * An arraylist holding all the rpg-players currently on the server.
-     */
-    private static final HashMap<UUID, RpgPlayer> players = new HashMap<>();
+    private static final String[] HONORABLE_DEATH_MESSAGES = {
+            " was slain by ",
+            " met an honorable death by ",
+            " was bested by ",
+            " lost in a fight against ",
+            ", in an epic duel lost to ",
+            " met their fate by the hands of "
+    };
 
-    /**
-     * Initializes the Player Manager to handle events.
-     */
-    public static void init () {
-        Bukkit.getPluginManager().registerEvents(new PlayerManager(), plugin);
-        // Runs once every 5 minutes. 20 Ticks -> 1 Second, 60 Seconds -> 1 Minute, 5 Minutes.
-        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, PlayerManager::saveAllPlayers, 60 * 5 * 20, 60 * 5 * 20);
+    private static final int AUTO_SAVE_PERIOD_TICKS = 60 * 5 * 20;
+    private static final int POST_JOIN_HEAL_DELAY_TICKS = 5;
+    private static final int PASSIVE_START_DELAY_TICKS = 20 * 20;
+
+    private static final int BASE_REGEN_TICKS_PER_HEART = 20 * 4;
+    private static final double TOTEM_SOUND_VOLUME = 0.8f;
+    private static final float DEATH_SOUND_PITCH = 2.0f;
+    private static final float DEATH_SOUND_VOLUME = 0.8f;
+
+    private static final Map<UUID, RpgPlayer> PLAYERS_BY_ID = new HashMap<>();
+
+    private PlayerManager() {
     }
 
-    /**
-     * Prints the given string into console as ChatColor.GRAY.
-     * @param message The message to be sent to console
-     */
-    private static void console (String message) {
-        console(message, ChatColor.GRAY);
+    public static void init() {
+        Bukkit.getPluginManager().registerEvents(new PlayerManager(), getInstance());
+        Bukkit.getScheduler().runTaskTimerAsynchronously(
+                getInstance(),
+                PlayerManager::saveAllPlayers,
+                AUTO_SAVE_PERIOD_TICKS,
+                AUTO_SAVE_PERIOD_TICKS
+        );
     }
 
-    /**
-     * Prints the given string into console with the given coloring.
-     * @param message The message be sent to console
-     * @param color The color the message should be in
-     */
-    private static void console (String message, ChatColor color) {
-        Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_GREEN + "RPG" + ChatColor.DARK_GRAY + "] [" + ChatColor.LIGHT_PURPLE + "PlayMgr" + ChatColor.DARK_GRAY + "] " + color + message);
+    public static RpgPlayer getPlayer(UUID uuid) {
+        return PLAYERS_BY_ID.get(uuid);
     }
 
-    /**
-     * Pulls a specific player from the player's list. Runs in constant time as promised by Java's HashMaps.
-     *
-     * @param uuid The uuid of the player to grab.
-     * @return Returns the found player. Potentially null if no such player.
-     */
-    public static RpgPlayer getPlayer (UUID uuid) {
-        return players.get(uuid);
-    }
-
-    /**
-     * Pulls a specific player depending on their name. This takes O(n) since our HashMap is mapped by UUID not names.
-     *
-     * @param name The name of the player to find.
-     * @return Returns the found player, or null.
-     */
-    public static RpgPlayer getPlayer (String name) {
-        for (RpgPlayer p: players.values())
-            if (name.equals(p.getName()))
-                return p;
+    public static RpgPlayer getPlayer(String name) {
+        for (RpgPlayer player : PLAYERS_BY_ID.values()) {
+            if (player.getName().equals(name)) {
+                return player;
+            }
+        }
         return null;
     }
 
-    /**
-     * Adds a player to the array of players.
-     *
-     * @param p The RpgPlayer to add to the list.
-     */
-    public static void addPlayer (RpgPlayer p) {
-        console("Adding player to player list.");
-        players.put(p.getUuid(), p);
-        console("Player added to player list.", ChatColor.GREEN);
-        Bukkit.getScheduler().runTaskLater(plugin, p::passive, 20*20);
+    public static void addPlayer(RpgPlayer player) {
+        if (player == null) {
+            return;
+        }
+
+        log("Adding player to player list.");
+        PLAYERS_BY_ID.put(player.getUuid(), player);
+        Bukkit.getScheduler().runTaskLater(getInstance(), player::passive, PASSIVE_START_DELAY_TICKS);
+        log("Player added to player list.", ChatColor.GREEN);
     }
 
-    /**
-     * Removes a player from the array of players.
-     *
-     * @param player The player to remove from the PlayerManager.
-     */
-    public static void removePlayer (@Nullable RpgPlayer player) {
-        if (player == null) return;
+    public static void removePlayer(@Nullable RpgPlayer player) {
+        if (player == null) {
+            return;
+        }
         removePlayer(player.getUuid());
     }
 
-    /**
-     * Removes a player from the array of players.
-     *
-     * @param uuid The uuid of the player to remove from the PlayerManager.
-     */
-    public static void removePlayer (@Nullable UUID uuid) {
-        players.remove(uuid);
+    public static void removePlayer(@Nullable UUID uuid) {
+        if (uuid == null) {
+            return;
+        }
+        PLAYERS_BY_ID.remove(uuid);
     }
 
-    /**
-     * Scales the health of a player based on their max health.
-     *
-     * @param p The player who needs to have their health scaled.
-     */
-    public static void scaleHealth (Player p) {
-        double max = Objects.requireNonNull(p.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue();
-        p.setHealthScale(max);
-        p.setSaturatedRegenRate(20 * 4); // Number of ticks to gain 1 hp
-        p.setUnsaturatedRegenRate(20 * 4);
+    public static void scaleHealth(Player player) {
+        AttributeInstance maxHealthAttribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        double maxHealth = Objects.requireNonNull(maxHealthAttribute).getValue();
+
+        player.setHealthScale(maxHealth);
+        scaleRegen(player, 1.0);
     }
 
-    /**
-     * Scales the health regeneration of a player based on our re-balancing, and a modifier.
-     *
-     * @param p The player who's regen is being scaled.
-     * @param mod The multiplicative modifier to health regen.
-     */
-    public static void scaleRegen (Player p, double mod) {
-        p.setSaturatedRegenRate((int) (20 * 4 * mod)); // Number of ticks to gain 1 hp.
-        p.setUnsaturatedRegenRate((int) (20 * 4 * mod));
+    public static void scaleRegen(Player player, double modifier) {
+        int regenRate = (int) (BASE_REGEN_TICKS_PER_HEART * modifier);
+        player.setSaturatedRegenRate(regenRate);
+        player.setUnsaturatedRegenRate(regenRate);
     }
 
-    /**
-     * Prevents the loss of hunger due to regeneration.
-     */
-    public static void hunger (EntityExhaustionEvent event) {
+    public static void hunger(EntityExhaustionEvent event) {
         event.setCancelled(true);
     }
 
-    /**
-     * Runs the player manager when damaged by the environment.
-     *
-     * @param event The damage event to consider.
-     */ // todo: This should probably be considered at the end of Advanced Damage.
-    public static void environmentalDamage (EntityDamageEvent event) {
-        Player player = (Player) event.getEntity();
-        if (player.getHealth() <= event.getDamage()) {
-            if (player.getInventory().getItemInMainHand().getType() == Material.TOTEM_OF_UNDYING || player.getInventory().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING) return;
-            RpgPlayer rpg = getPlayer(player.getUniqueId());
-            if (rpg == null) return;
-            if (rpg.inCombat()) {
-                rpg.damaged(event);
-                if (event.isCancelled()) return;
-                if (player.getHealth() > event.getDamage()) return;
-                event.setCancelled(true);
-                if (rpg.revive()) return;
-                honorableDeath(rpg);
-            } else {
-                event.setCancelled(true);
-                dishonorableDeath(rpg, event.getCause());
-            }
+    public static void environmentalDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
         }
-    }
 
-    /**
-     * Runs the player manager when damaged.
-     *
-     * @param event The damage event to be consdiered.
-     */ // todo: This should probably be considered at the end of Advanced Damage.
-    public static void onDamage (EntityDamageByEntityEvent event) {
+        if (!isLethal(player, event)) {
+            return;
+        }
 
-        Player player = (Player) event.getEntity(); //Check RPGEventListener
-        RpgPlayer rpg = PlayerManager.getPlayer(player.getUniqueId());
-        if (rpg == null) return;
-        rpg.damaged(event);
-        if (event.isCancelled()) return;
-        if (player.getHealth() > event.getDamage()) return;
+        if (isHoldingTotem(player)) {
+            return;
+        }
 
-        if (player.getHealth() <= event.getDamage() ) {
-            if (player.getInventory().getItemInMainHand().getType() == Material.TOTEM_OF_UNDYING || player.getInventory().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING) return;
+        RpgPlayer rpgPlayer = getPlayer(player.getUniqueId());
+        if (rpgPlayer == null) {
+            return;
+        }
+
+        if (!rpgPlayer.inCombat()) {
             event.setCancelled(true);
-            if (rpg.revive()) return;
-            honorableDeath(rpg);
+            dishonorableDeath(rpgPlayer, event.getCause());
+            return;
+        }
+
+        rpgPlayer.damaged(event);
+        if (event.isCancelled() || !isLethal(player, event)) {
+            return;
+        }
+
+        event.setCancelled(true);
+        if (!rpgPlayer.revive()) {
+            honorableDeath(rpgPlayer);
         }
     }
 
-    /**
-     * Called whenever a player dies honorably.
-     *
-     * @param rpg The RpgPlayer to consider.
-     */
-    public static void honorableDeath (RpgPlayer rpg) {
-        Entity killer = rpg.getLastHitBy();
-        Player player = rpg.getBukkitPlayer();
-        String deathMessage;
-        if (killer instanceof Player) {
-            RpgPlayer rpgKiller = PlayerManager.getPlayer(killer.getUniqueId());
-            if (rpgKiller != null) deathMessage = rpg.getPlayerRarity() + player.getName() + ChatColor.GRAY + DEATH_FLAVOR[Math.abs(new Random().nextInt() % DEATH_FLAVOR.length)] + rpgKiller.getPlayerRarity() + killer.getName();
-            else deathMessage = rpg.getPlayerRarity() + player.getName() + ChatColor.GRAY + DEATH_FLAVOR[Math.abs(new Random().nextInt() % DEATH_FLAVOR.length)] + ChatColor.BLACK + killer.getName();
-        } else if (killer.isCustomNameVisible()) {
-            deathMessage = rpg.getPlayerRarity() + player.getName() + ChatColor.GRAY + DEATH_FLAVOR[Math.abs(new Random().nextInt() % DEATH_FLAVOR.length)] + killer.getCustomName();
-            player.sendMessage(killer.getCustomName() + ChatColor.GRAY + " has left the fight upon your death");
-            killer.remove();
-        } else
-            deathMessage = rpg.getPlayerRarity() + player.getName() + ChatColor.GRAY + DEATH_FLAVOR[Math.abs(new Random().nextInt() % DEATH_FLAVOR.length)] + killer.getName();
-        allDeaths(rpg, deathMessage);
+    public static void onDamage(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+
+        RpgPlayer rpgPlayer = getPlayer(player.getUniqueId());
+        if (rpgPlayer == null) {
+            return;
+        }
+
+        rpgPlayer.damaged(event);
+        if (event.isCancelled() || !isLethal(player, event)) {
+            return;
+        }
+
+        if (isHoldingTotem(player)) {
+            return;
+        }
+
+        event.setCancelled(true);
+        if (!rpgPlayer.revive()) {
+            honorableDeath(rpgPlayer);
+        }
     }
 
-    /**
-     * Called whenever a player dies to the elements.
-     *
-     * @param rpg The RpgPlayer to consider.
-     */
-    public static void dishonorableDeath (RpgPlayer rpg, EntityDamageEvent.DamageCause cause) {
-        Player player = rpg.getBukkitPlayer();
-        String deathMessage = rpg.getPlayerRarity() + player.getName() + ChatColor.GRAY + " died to " + cause.toString().toLowerCase();
-        rpg.dropAll();
-        player.setExp(player.getExp()/2);
-        player.setLevel(player.getLevel()/2);
-        allDeaths(rpg, deathMessage);
+    public static void honorableDeath(RpgPlayer player) {
+        Entity killer = player.getLastHitBy();
+        if (killer == null) {
+            dishonorableDeath(player, EntityDamageEvent.DamageCause.CUSTOM);
+            return;
+        }
+
+        String deathMessage = buildHonorDeathMessage(player, killer);
+        allDeaths(player, deathMessage);
     }
 
-    /**
-     * Called whenever a player dies to teleport them to spawn and send the death message.
-     *
-     * @param rpg The RpgPlayer to return to their spawn.
-     * @param msg The death message to send into console.
-     */
-    public static void allDeaths (RpgPlayer rpg, String msg) {
-        Player player = rpg.getBukkitPlayer();
-        Location spawn = player.getBedSpawnLocation();
-        console("Death location: " + rpg.getBukkitPlayer().getLocation());
-        if (spawn == null) player.teleport(Bukkit.getWorld("world").getSpawnLocation());
-        else player.teleport(spawn);
+    public static void dishonorableDeath(RpgPlayer player, EntityDamageEvent.DamageCause cause) {
+        Player bukkitPlayer = player.getBukkitPlayer();
+        String deathMessage = player.getPlayerRarity()
+                + bukkitPlayer.getName()
+                + ChatColor.GRAY
+                + " died to "
+                + cause.toString().toLowerCase();
 
-        rpg.heal();
-        player.setFireTicks(0);
-        for (PotionEffect p: player.getActivePotionEffects()) player.removePotionEffect(p.getType());
+        player.dropAll();
+        bukkitPlayer.setExp(bukkitPlayer.getExp() / 2);
+        bukkitPlayer.setLevel(bukkitPlayer.getLevel() / 2);
 
-        for (Player p: Bukkit.getOnlinePlayers()) p.sendMessage(msg);
-        console(msg);
-
-        player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_PLACE, 0.8f, 2f);
+        allDeaths(player, deathMessage);
     }
 
-    /**
-     * Adds the new player to the Player Manager when they join the server.
-     *
-     * @param event The player join event.
-     */
+    public static void allDeaths(RpgPlayer player, String message) {
+        Player bukkitPlayer = player.getBukkitPlayer();
+
+        log("Death location: " + bukkitPlayer.getLocation());
+        teleportToRespawnLocation(bukkitPlayer);
+        restorePlayerState(player);
+
+        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            onlinePlayer.sendMessage(message);
+        }
+
+        log(message);
+        bukkitPlayer.playSound(bukkitPlayer.getLocation(), Sound.BLOCK_ANVIL_PLACE, DEATH_SOUND_VOLUME, DEATH_SOUND_PITCH);
+    }
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onJoin (PlayerJoinEvent event) {
-        console("Adding player to player list.");
+    public void onJoin(PlayerJoinEvent event) {
         RpgPlayer player = new RpgPlayer(event.getPlayer());
-        players.put(player.getUuid(), player);
-        Bukkit.getServer().getScheduler().runTaskLater(plugin, () -> player.heal(), 5);
+
+        addPlayer(player);
+        Bukkit.getScheduler().runTaskLater(getInstance(), player::heal, POST_JOIN_HEAL_DELAY_TICKS);
         DataManager.getInstance().load(player);
-        console("Player added to player list.", ChatColor.GREEN);
     }
 
-    /**
-     * Removes the player from the PLayer Manager when they leave the server.
-     *
-     * @param event The player leave event.
-     */
     @EventHandler
-    public void onLeave (PlayerQuitEvent event) {
-        RpgPlayer rpgPlayer = getPlayer(event.getPlayer().getUniqueId());
-        DataManager.getInstance().save(rpgPlayer);
-        if (rpgPlayer != null) {
-            Party party = rpgPlayer.getParty();
-            if (party != null) party.removePlayer(rpgPlayer.getBukkitPlayer());
-            rpgPlayer.setParty(null);
-        }
-        removePlayer(rpgPlayer);
+    public void onLeave(PlayerQuitEvent event) {
+        RpgPlayer player = getPlayer(event.getPlayer().getUniqueId());
+
+        DataManager.getInstance().save(player);
+        removePlayerFromParty(player);
+        removePlayer(player);
     }
 
-    /**
-     * Called periodically while the server runs to update and save player's files. This helps to reduce the rollback
-     * time in the event of a hard crash.
-     */
-    public static void saveAllPlayers () {
-        if (players.isEmpty()) return;
+    public static void saveAllPlayers() {
+        if (PLAYERS_BY_ID.isEmpty()) {
+            return;
+        }
+
         DataManager dataManager = DataManager.getInstance();
-        for (RpgPlayer player : players.values())
+        for (RpgPlayer player : PLAYERS_BY_ID.values()) {
             dataManager.save(player);
+        }
+    }
+
+    private static boolean isLethal(Player player, EntityDamageEvent event) {
+        return player.getHealth() <= event.getDamage();
+    }
+
+    private static boolean isHoldingTotem(Player player) {
+        return player.getInventory().getItemInMainHand().getType() == Material.TOTEM_OF_UNDYING
+                || player.getInventory().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING;
+    }
+
+    private static String buildHonorDeathMessage(RpgPlayer victim, Entity killer) {
+        Player victimPlayer = victim.getBukkitPlayer();
+        String deathFlavor = randomDeathFlavor();
+
+        if (killer instanceof Player killerPlayer) {
+            RpgPlayer rpgKiller = getPlayer(killerPlayer.getUniqueId());
+            String killerName = rpgKiller != null
+                    ? rpgKiller.getPlayerRarity() + killerPlayer.getName()
+                    : ChatColor.BLACK + killerPlayer.getName();
+
+            return victim.getPlayerRarity() + victimPlayer.getName() + ChatColor.GRAY + deathFlavor + killerName;
+        }
+
+        if (killer.isCustomNameVisible() && killer.getCustomName() != null) {
+            victimPlayer.sendMessage(killer.getCustomName() + ChatColor.GRAY + " has left the fight upon your death");
+            killer.remove();
+            return victim.getPlayerRarity() + victimPlayer.getName() + ChatColor.GRAY + deathFlavor + killer.getCustomName();
+        }
+
+        return victim.getPlayerRarity() + victimPlayer.getName() + ChatColor.GRAY + deathFlavor + killer.getName();
+    }
+
+    private static String randomDeathFlavor() {
+        int index = ThreadLocalRandom.current().nextInt(HONORABLE_DEATH_MESSAGES.length);
+        return HONORABLE_DEATH_MESSAGES[index];
+    }
+
+    private static void teleportToRespawnLocation(Player player) {
+        Location bedSpawn = player.getBedSpawnLocation();
+        if (bedSpawn != null) {
+            player.teleport(bedSpawn);
+            return;
+        }
+
+        World defaultWorld = Bukkit.getWorld("world");
+        if (defaultWorld != null) {
+            player.teleport(defaultWorld.getSpawnLocation());
+        }
+    }
+
+    private static void restorePlayerState(RpgPlayer player) {
+        Player bukkitPlayer = player.getBukkitPlayer();
+
+        player.heal();
+        bukkitPlayer.setFireTicks(0);
+
+        for (PotionEffect effect : bukkitPlayer.getActivePotionEffects()) {
+            bukkitPlayer.removePotionEffect(effect.getType());
+        }
+    }
+
+    private static void removePlayerFromParty(@Nullable RpgPlayer player) {
+        if (player == null) {
+            return;
+        }
+
+        Party party = player.getParty();
+        if (party == null) {
+            return;
+        }
+
+        party.removePlayer(player.getBukkitPlayer());
+        player.setParty(null);
+    }
+
+    private static void log(String message) {
+        log(message, ChatColor.GRAY);
+    }
+
+    private static void log(String message, ChatColor color) {
+        Bukkit.getServer().getConsoleSender().sendMessage(CONSOLE_PREFIX + color + message);
     }
 }
