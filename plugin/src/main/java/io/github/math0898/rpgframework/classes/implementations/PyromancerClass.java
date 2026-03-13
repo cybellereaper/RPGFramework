@@ -21,8 +21,26 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents the Pyromancer class.
+ *
+ * <p>The Pyromancer is an offensive fire-based class that specializes in burn effects,
+ * bonus fire damage, self-sustain, and a single death-prevention effect through
+ * Phoenix Renewal.</p>
+ *
+ * <p>Ability bindings:</p>
+ * <ul>
+ *     <li>Left-click with blaze powder: Scorch</li>
+ *     <li>Right-click with blaze powder: Kindle</li>
+ *     <li>Left-click with blaze rod: Flare Volley</li>
+ *     <li>Right-click with blaze rod: Cauterize</li>
+ * </ul>
+ */
 public class PyromancerClass extends AbstractClass {
 
+    /**
+     * Enumerates the Pyromancer's abilities in cooldown index order.
+     */
     private enum Ability {
         SCORCH,
         KINDLE,
@@ -62,12 +80,24 @@ public class PyromancerClass extends AbstractClass {
     private static final int NORMAL_ATTACK_FIRE_SECONDS = 5;
     private static final int PHOENIX_ATTACK_FIRE_SECONDS = 8;
 
+    /**
+     * Constructs a new {@code PyromancerClass} for the specified player.
+     *
+     * @param player the RPG player that owns this class instance
+     */
     public PyromancerClass(RpgPlayer player) {
         super(player);
         setCooldowns(createCooldowns());
         setClassItems(PRIMARY_ITEM, SECONDARY_ITEM);
     }
 
+    /**
+     * Handles left-click ability casting for the Pyromancer's class items.
+     *
+     * @param event the interaction event that triggered the cast
+     * @param material the item used to cast the ability
+     * @throws IllegalArgumentException if the provided material is not a supported class item
+     */
     @Override
     public void onLeftClickCast(PlayerInteractEvent event, Material material) {
         if (material == PRIMARY_ITEM) {
@@ -83,6 +113,13 @@ public class PyromancerClass extends AbstractClass {
         throw new IllegalArgumentException("Unsupported cast item: " + material);
     }
 
+    /**
+     * Handles right-click ability casting for the Pyromancer's class items.
+     *
+     * @param event the interaction event that triggered the cast
+     * @param material the item used to cast the ability
+     * @throws IllegalArgumentException if the provided material is not a supported class item
+     */
     @Override
     public void onRightClickCast(PlayerInteractEvent event, Material material) {
         if (material == PRIMARY_ITEM) {
@@ -98,6 +135,14 @@ public class PyromancerClass extends AbstractClass {
         throw new IllegalArgumentException("Unsupported cast item: " + material);
     }
 
+    /**
+     * Handles the Pyromancer's death-prevention passive.
+     *
+     * <p>If Phoenix Renewal is off cooldown, death is prevented, the player is healed,
+     * cleansed of fire, and granted temporary buffs.</p>
+     *
+     * @return {@code false} if death is prevented; {@code true} if the player should die normally
+     */
     @Override
     public boolean onDeath() {
         if (!isAbilityReady(Ability.PHOENIX_RENEWAL)) {
@@ -119,6 +164,14 @@ public class PyromancerClass extends AbstractClass {
         return false;
     }
 
+    /**
+     * Applies Pyromancer defensive effects when the player takes damage.
+     *
+     * <p>The Pyromancer is immune to fire damage. While Phoenix Renewal is active,
+     * incoming primary damage is further reduced.</p>
+     *
+     * @param event the incoming advanced damage event
+     */
     @Override
     public void damaged(AdvancedDamageEvent event) {
         event.getEntity().setFireTicks(0);
@@ -129,6 +182,14 @@ public class PyromancerClass extends AbstractClass {
         }
     }
 
+    /**
+     * Applies the Pyromancer's attack modifiers to an outgoing damage event.
+     *
+     * <p>Basic attacks deal additional fire damage, ignite the target, and may heal
+     * the player while Phoenix Renewal is active.</p>
+     *
+     * @param event the outgoing advanced damage event
+     */
     @Override
     public void attack(AdvancedDamageEvent event) {
         double fireDamage = calculateAttackFireDamage(event);
@@ -144,6 +205,12 @@ public class PyromancerClass extends AbstractClass {
         ));
     }
 
+    /**
+     * Casts Scorch.
+     *
+     * <p>Scorch ignites and damages nearby enemy targets, then heals the caster
+     * based on the number of enemies hit, up to a fixed maximum.</p>
+     */
     private void castScorch() {
         if (!isAbilityReady(Ability.SCORCH)) {
             return;
@@ -174,6 +241,12 @@ public class PyromancerClass extends AbstractClass {
         restartCooldown(Ability.SCORCH);
     }
 
+    /**
+     * Casts Kindle.
+     *
+     * <p>Kindle grants temporary movement speed and fire resistance, and enables
+     * bonus fire damage on the Pyromancer's attacks while active.</p>
+     */
     private void castKindle() {
         if (!isAbilityReady(Ability.KINDLE)) {
             return;
@@ -192,6 +265,11 @@ public class PyromancerClass extends AbstractClass {
         restartCooldown(Ability.KINDLE);
     }
 
+    /**
+     * Casts Flare Volley.
+     *
+     * <p>Flare Volley launches three small fireballs in a forward spread.</p>
+     */
     private void castFlareVolley() {
         if (!isAbilityReady(Ability.FLARE_VOLLEY)) {
             return;
@@ -211,6 +289,12 @@ public class PyromancerClass extends AbstractClass {
         restartCooldown(Ability.FLARE_VOLLEY);
     }
 
+    /**
+     * Casts Cauterize.
+     *
+     * <p>Cauterize extinguishes the player, restores health, and grants temporary
+     * regeneration and fire resistance.</p>
+     */
     private void castCauterize() {
         if (!isAbilityReady(Ability.CAUTERIZE)) {
             return;
@@ -231,6 +315,12 @@ public class PyromancerClass extends AbstractClass {
         restartCooldown(Ability.CAUTERIZE);
     }
 
+    /**
+     * Applies Scorch's effects to a single target.
+     *
+     * @param source the player responsible for the damage
+     * @param target the target to damage and ignite
+     */
     private void applyScorchToTarget(Player source, LivingEntity target) {
         target.setFireTicks(Math.max(target.getFireTicks(), secondsToTicks(SCORCH_FIRE_SECONDS)));
         target.damage(SCORCH_DAMAGE, source);
@@ -245,12 +335,26 @@ public class PyromancerClass extends AbstractClass {
         );
     }
 
+    /**
+     * Applies the temporary buffs granted by Phoenix Renewal.
+     *
+     * @param rpgPlayer the player receiving the effects
+     */
     private void applyPhoenixRenewalEffects(RpgPlayer rpgPlayer) {
         rpgPlayer.addPotionEffect(PotionEffectType.REGENERATION, secondsToTicks(PHOENIX_DURATION_SECONDS), 3);
         rpgPlayer.addPotionEffect(PotionEffectType.STRENGTH, secondsToTicks(PHOENIX_DURATION_SECONDS), 1);
         rpgPlayer.addPotionEffect(PotionEffectType.SPEED, secondsToTicks(PHOENIX_DURATION_SECONDS), 1);
     }
 
+    /**
+     * Calculates the bonus fire damage to add to an outgoing basic attack.
+     *
+     * <p>Additional damage is granted against already burning targets, while Kindle
+     * is active, and while Phoenix Renewal is active.</p>
+     *
+     * @param event the outgoing advanced damage event
+     * @return the amount of fire damage to add
+     */
     private double calculateAttackFireDamage(AdvancedDamageEvent event) {
         double fireDamage = BASE_FIRE_DAMAGE;
 
@@ -269,6 +373,14 @@ public class PyromancerClass extends AbstractClass {
         return fireDamage;
     }
 
+    /**
+     * Launches a single fireball with a horizontal spread offset.
+     *
+     * @param player the player launching the projectile
+     * @param forward the normalized forward direction
+     * @param sideways the normalized horizontal perpendicular direction
+     * @param offset the horizontal spread offset to apply
+     */
     private void launchFireball(Player player, Vector forward, Vector sideways, double offset) {
         Vector velocity = forward.clone()
                 .add(sideways.clone().multiply(offset))
@@ -279,6 +391,15 @@ public class PyromancerClass extends AbstractClass {
         fireball.setIsIncendiary(true);
     }
 
+    /**
+     * Computes a normalized horizontal vector perpendicular to the given direction.
+     *
+     * <p>If the provided direction has no horizontal perpendicular component,
+     * a default unit vector is returned.</p>
+     *
+     * @param direction the source direction vector
+     * @return a normalized horizontal perpendicular vector
+     */
     private Vector calculatePerpendicularHorizontalVector(Vector direction) {
         Vector perpendicular = direction.clone().crossProduct(new Vector(0, 1, 0));
 
@@ -289,26 +410,62 @@ public class PyromancerClass extends AbstractClass {
         return perpendicular.normalize();
     }
 
+    /**
+     * Determines whether the specified ability is currently off cooldown.
+     *
+     * @param ability the ability to check
+     * @return {@code true} if the ability is ready to use; {@code false} otherwise
+     */
     private boolean isAbilityReady(Ability ability) {
         return offCooldown(ability.ordinal());
     }
 
+    /**
+     * Restarts the cooldown for the specified ability.
+     *
+     * @param ability the ability whose cooldown should be restarted
+     */
     private void restartCooldown(Ability ability) {
         getCooldowns()[ability.ordinal()].restart();
     }
 
+    /**
+     * Determines whether Kindle's active effect window is currently in effect.
+     *
+     * @return {@code true} if Kindle is active; {@code false} otherwise
+     */
     private boolean isKindled() {
         return isEffectWindowActive(Ability.KINDLE, 20, KINDLE_DURATION_SECONDS);
     }
 
+    /**
+     * Determines whether Phoenix Renewal's empowered state is currently active.
+     *
+     * @return {@code true} if Phoenix Renewal's active window is in effect; {@code false} otherwise
+     */
     private boolean isPhoenixEmpowered() {
         return isEffectWindowActive(Ability.PHOENIX_RENEWAL, PHOENIX_COOLDOWN_SECONDS, PHOENIX_DURATION_SECONDS);
     }
 
+    /**
+     * Determines whether an ability's active effect window is still running.
+     *
+     * <p>This is derived from the ability's remaining cooldown time.</p>
+     *
+     * @param ability the ability to evaluate
+     * @param cooldownSeconds the full cooldown duration in seconds
+     * @param activeWindowSeconds the duration of the active effect window in seconds
+     * @return {@code true} if the ability's active effect window is still active; {@code false} otherwise
+     */
     private boolean isEffectWindowActive(Ability ability, int cooldownSeconds, int activeWindowSeconds) {
         return getCooldowns()[ability.ordinal()].getRemaining() >= (cooldownSeconds - activeWindowSeconds);
     }
 
+    /**
+     * Creates and initializes the cooldown array for all Pyromancer abilities.
+     *
+     * @return the initialized cooldown array ordered by {@link Ability#ordinal()}
+     */
     private Cooldown[] createCooldowns() {
         Map<Ability, Integer> cooldownDurations = new EnumMap<>(Ability.class);
         cooldownDurations.put(Ability.SCORCH, 12);
@@ -325,10 +482,29 @@ public class PyromancerClass extends AbstractClass {
         return cooldowns;
     }
 
+    /**
+     * Plays a sound at the player's current location.
+     *
+     * @param player the player whose location will be used
+     * @param sound the sound to play
+     * @param volume the playback volume
+     * @param pitch the playback pitch
+     */
     private void playSound(Player player, Sound sound, float volume, float pitch) {
         player.getWorld().playSound(player.getLocation(), sound, volume, pitch);
     }
 
+    /**
+     * Spawns particles slightly above the player's current location.
+     *
+     * @param player the player whose location will be used
+     * @param particle the particle type to spawn
+     * @param count the number of particles to spawn
+     * @param offsetX the horizontal X offset range
+     * @param offsetY the vertical offset range
+     * @param offsetZ the horizontal Z offset range
+     * @param extra the particle extra parameter
+     */
     private void spawnParticle(Player player, Particle particle, int count, double offsetX, double offsetY, double offsetZ, double extra) {
         player.getWorld().spawnParticle(
                 particle,
@@ -341,6 +517,12 @@ public class PyromancerClass extends AbstractClass {
         );
     }
 
+    /**
+     * Converts a duration in seconds to Minecraft ticks.
+     *
+     * @param seconds the duration in seconds
+     * @return the equivalent duration in ticks
+     */
     private int secondsToTicks(int seconds) {
         return seconds * 20;
     }
