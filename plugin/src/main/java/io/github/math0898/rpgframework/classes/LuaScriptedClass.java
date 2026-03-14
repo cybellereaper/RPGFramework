@@ -17,7 +17,7 @@ import org.luaj.vm2.lib.jse.CoerceJavaToLua;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-public final class LuaScriptedClass extends LuaBackedClass {
+public class LuaScriptedClass extends LuaBackedClass {
 
     private final String classKey;
     private final LuaClassDefinition definition;

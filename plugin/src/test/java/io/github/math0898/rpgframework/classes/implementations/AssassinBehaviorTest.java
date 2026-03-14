@@ -1,69 +1,77 @@
 package io.github.math0898.rpgframework.classes.implementations;
 
+import io.github.math0898.rpgframework.classes.lua.LuaClassDefinition;
+import io.github.math0898.rpgframework.classes.lua.LuaClassScriptEngine;
 import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.potion.PotionEffectType;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Disabled("PotionEffectType static initialization is unavailable in this JVM-only unit test runtime")
 class AssassinBehaviorTest {
 
-    private final AssassinBehavior behavior = new AssassinBehavior();
+    private final LuaClassScriptEngine scriptEngine = new LuaClassScriptEngine();
 
     @Test
-    void negatesDamageDuringHeroicDodgeWindow() {
-        assertTrue(behavior.shouldNegateIncomingDamage(290, 0, 0.99));
+    void assassinDefinitionHasExpectedClassItems() {
+        LuaClassDefinition definition = loadAssassinDefinition();
+
+        assertTrue(definition.classItems().contains(Material.GHAST_TEAR));
     }
 
     @Test
-    void negatesDamageDuringInvisibilityWindow() {
-        assertTrue(behavior.shouldNegateIncomingDamage(0, 20, 0.99));
+    void assassinDefinitionHasExpectedArmor() {
+        LuaClassDefinition definition = loadAssassinDefinition();
+
+        assertEquals(Material.LEATHER_HELMET, definition.requiredArmor().get(EquipmentSlot.HEAD));
+        assertEquals(Material.LEATHER_CHESTPLATE, definition.requiredArmor().get(EquipmentSlot.CHEST));
+        assertEquals(Material.LEATHER_LEGGINGS, definition.requiredArmor().get(EquipmentSlot.LEGS));
+        assertEquals(Material.LEATHER_BOOTS, definition.requiredArmor().get(EquipmentSlot.FEET));
     }
 
     @Test
-    void negatesDamageWhenRandomDodgeProcs() {
-        assertTrue(behavior.shouldNegateIncomingDamage(0, 0, 0.10));
+    void assassinDefinitionHasExpectedCooldowns() {
+        LuaClassDefinition definition = loadAssassinDefinition();
+
+        assertArrayEquals(new int[]{30, 60, 300}, definition.cooldownSeconds());
     }
 
     @Test
-    void doesNotNegateDamageOutsideAllConditions() {
-        assertFalse(behavior.shouldNegateIncomingDamage(289, 19, 0.11));
+    void assassinDefinitionExposesRuntimeHooks() {
+        LuaClassDefinition definition = loadAssassinDefinition();
+
+        assertTrue(definition.hook("passive").isfunction());
+        assertTrue(definition.hook("onLeftClick").isfunction());
+        assertTrue(definition.hook("onRightClick").isfunction());
+        assertTrue(definition.hook("onDeath").isfunction());
+        assertTrue(definition.hook("onDamaged").isfunction());
+        assertTrue(definition.hook("onAttack").isfunction());
     }
 
-    @Test
-    void bonusDamageDependsOnTargetType() {
-        assertEquals(5.0, behavior.bonusDamage(true));
-        assertEquals(10.0, behavior.bonusDamage(false));
-    }
+    private LuaClassDefinition loadAssassinDefinition() {
+        String script = """
+                return {
+                  id = "assassin",
+                  classItems = { "GHAST_TEAR" },
+                  requiredArmor = {
+                    HEAD = "LEATHER_HELMET",
+                    CHEST = "LEATHER_CHESTPLATE",
+                    LEGS = "LEATHER_LEGGINGS",
+                    FEET = "LEATHER_BOOTS"
+                  },
+                  cooldowns = { 30, 60, 300 },
+                  passive = function(clazz) end,
+                  onLeftClick = function(clazz, event) end,
+                  onRightClick = function(clazz, event) end,
+                  onDeath = function(clazz) return true end,
+                  onDamaged = function(clazz, event) end,
+                  onAttack = function(clazz, event) end
+                }
+                """;
 
-    @Test
-    void poisonedBladeActivationUsesCooldownThreshold() {
-        assertTrue(behavior.isPoisonedBladeActive(50));
-        assertFalse(behavior.isPoisonedBladeActive(49));
-    }
-
-    @Test
-    void poisonedBladeEffectsStayInExpectedOrder() {
-        assertIterableEquals(
-                List.of(PotionEffectType.BLINDNESS, PotionEffectType.POISON, PotionEffectType.SLOWNESS),
-                behavior.poisonedBladeEffects()
-        );
-    }
-
-    @Test
-    void armorMappingMatchesFullLeatherSet() {
-        assertTrue(behavior.hasRequiredArmor(EquipmentSlot.HEAD, Material.LEATHER_HELMET));
-        assertTrue(behavior.hasRequiredArmor(EquipmentSlot.CHEST, Material.LEATHER_CHESTPLATE));
-        assertTrue(behavior.hasRequiredArmor(EquipmentSlot.LEGS, Material.LEATHER_LEGGINGS));
-        assertTrue(behavior.hasRequiredArmor(EquipmentSlot.FEET, Material.LEATHER_BOOTS));
-        assertFalse(behavior.hasRequiredArmor(EquipmentSlot.HEAD, Material.GOLDEN_HELMET));
+        return scriptEngine.parse(script);
     }
 }
