@@ -52,6 +52,24 @@ class LuaClassScriptEngineTest {
     }
 
     @Test
+    void runtimeContextDoesNotResolveLuaFunctionHooksThroughJavaApi() {
+        LuaClassDefinition definition = engine.parse("""
+                return {
+                  classItems = { "GHAST_TEAR" },
+                  requiredArmor = {},
+                  cooldowns = { 1 },
+                  onLeftClick = function(clazz)
+                    return clazz:helper()
+                  end
+                }
+                """);
+
+        LuaTable runtimeContext = definition.createRuntimeContext(CoerceJavaToLua.coerce(new TestLuaApi()));
+
+        assertTrue(definition.hook(runtimeContext, "onLeftClick").isfunction());
+    }
+
+    @Test
     void parseRejectsInvalidMaterialName() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> engine.parse("""
                 return {
