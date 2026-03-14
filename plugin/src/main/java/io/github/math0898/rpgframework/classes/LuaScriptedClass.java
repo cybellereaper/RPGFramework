@@ -23,6 +23,7 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.CoerceJavaToLua;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class LuaScriptedClass extends LuaBackedClass {
@@ -103,6 +104,18 @@ public class LuaScriptedClass extends LuaBackedClass {
         return event.getItem().getType().name();
     }
 
+    public String getHeldItem() {
+        Player player = getPlayer().getBukkitPlayer();
+        if (player.getInventory().getItemInMainHand() == null) {
+            return "";
+        }
+        return player.getInventory().getItemInMainHand().getType().name();
+    }
+
+    public String getPlayerRarity() {
+        return Objects.toString(getPlayer().getPlayerRarity(), "");
+    }
+
     public void sendClassMessage(String message) {
         send(message);
     }
@@ -119,6 +132,15 @@ public class LuaScriptedClass extends LuaBackedClass {
         List<LivingEntity> entities = getPlayer().nearbyEnemyCasterTargets(dx, dy, dz);
         for (int i = 0; i < entities.size(); i++) {
             table.set(i + 1, CoerceJavaToLua.coerce(entities.get(i)));
+        }
+        return table;
+    }
+
+    public LuaTable friendlyCasterTargets() {
+        LuaTable table = new LuaTable();
+        List<RpgPlayer> allies = getPlayer().friendlyCasterTargets();
+        for (int i = 0; i < allies.size(); i++) {
+            table.set(i + 1, CoerceJavaToLua.coerce(new LuaFriendlyTarget(allies.get(i))));
         }
         return table;
     }
@@ -339,6 +361,53 @@ public class LuaScriptedClass extends LuaBackedClass {
             return Enum.valueOf(enumType, rawValue.trim().toUpperCase());
         } catch (IllegalArgumentException ignored) {
             return null;
+        }
+    }
+
+    private static final class LuaFriendlyTarget {
+        private final RpgPlayer target;
+
+        private LuaFriendlyTarget(RpgPlayer target) {
+            this.target = target;
+        }
+
+        public void addPotion(String potionEffectTypeName, int durationSeconds, int amplifier, boolean ambient, boolean hideParticles) {
+            PotionEffectType type = PotionEffectType.getByName(potionEffectTypeName);
+            if (type == null) {
+                return;
+            }
+
+            target.getBukkitPlayer().addPotionEffect(new PotionEffect(type, durationSeconds * 20, amplifier, ambient, hideParticles));
+        }
+
+        public void heal(double amount) {
+            target.heal(amount);
+        }
+
+        public void setFireTicks(int ticks) {
+            target.getBukkitPlayer().setFireTicks(Math.max(0, ticks));
+        }
+
+        public void sendMessage(String message) {
+            target.sendMessage(message);
+        }
+
+        public void cleanseEffects(LuaTable effectsTable) {
+            if (effectsTable == null) {
+                return;
+            }
+
+            for (int i = 1; ; i++) {
+                LuaValue value = effectsTable.get(i);
+                if (value.isnil()) {
+                    break;
+                }
+
+                PotionEffectType effect = PotionEffectType.getByName(value.checkjstring());
+                if (effect != null) {
+                    target.getBukkitPlayer().removePotionEffect(effect);
+                }
+            }
         }
     }
 }
