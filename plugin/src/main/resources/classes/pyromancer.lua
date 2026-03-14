@@ -120,6 +120,9 @@ return {
       clazz:restartAbilityCooldown(clazz.abilities.FLARE_VOLLEY)
       return
     end
+
+    clazz:sendClassMessage("Scorch erupts around you!")
+    clazz:restartAbilityCooldown(clazz.abilities.SCORCH)
   end,
 
   onRightClick = function(clazz, event)
@@ -158,6 +161,11 @@ return {
       clazz:restartAbilityCooldown(clazz.abilities.CAUTERIZE)
       return
     end
+
+    clazz:sendClassMessage("Kindle empowers your flames!")
+    clazz:addPotion("SPEED", clazz.constants.KINDLE_DURATION_SECONDS, 1, false, false)
+    clazz:addPotion("FIRE_RESISTANCE", clazz.constants.KINDLE_DURATION_SECONDS, 1, false, false)
+    clazz:restartAbilityCooldown(clazz.abilities.KINDLE)
   end,
 
   onDeath = function(clazz)
