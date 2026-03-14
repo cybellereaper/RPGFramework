@@ -74,10 +74,42 @@ public abstract class AbstractClass implements Class, Listener {
         return false;
     }
 
+    protected boolean offCooldown(Enum<?> ability) {
+        return offCooldown(ability.ordinal());
+    }
+
+    protected float getRemainingCooldown(Enum<?> ability) {
+        Cooldown cooldown = getCooldown(ability.ordinal());
+        return cooldown == null ? 0.0f : cooldown.getRemaining();
+    }
+
+    protected void restartCooldown(Enum<?> ability) {
+        Cooldown cooldown = getCooldown(ability.ordinal());
+        if (cooldown != null) {
+            cooldown.restart();
+        }
+    }
+
+    protected static int secondsToTicks(int seconds) {
+        return seconds * 20;
+    }
+
     protected void send(String message) {
         if (player != null) {
             player.sendMessage(message);
         }
+    }
+
+
+    protected void setClassItems(Set<Material> materials) {
+        classItems.clear();
+        if (materials == null) {
+            return;
+        }
+
+        materials.stream()
+                .filter(Objects::nonNull)
+                .forEach(classItems::add);
     }
 
     protected void setClassItems(Material... materials) {

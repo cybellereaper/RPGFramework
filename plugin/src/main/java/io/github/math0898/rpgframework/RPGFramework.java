@@ -9,6 +9,9 @@ import io.github.math0898.rpgframework.commands.PartyCommand;
 import io.github.math0898.rpgframework.commands.SummonRPG;
 import io.github.math0898.rpgframework.commands.Tutorial;
 import io.github.math0898.rpgframework.commands.Updates;
+import io.github.math0898.rpgframework.classes.LuaClassConfigProvider;
+import io.github.math0898.rpgframework.classes.lua.LuaClassDefinitionRegistry;
+import io.github.math0898.rpgframework.classes.lua.LuaClassScriptEngine;
 import io.github.math0898.rpgframework.damage.AdvancedDamageHandler;
 import io.github.math0898.rpgframework.enemies.MobManager;
 import io.github.math0898.rpgframework.hooks.HookManager;
@@ -64,6 +67,7 @@ public final class RPGFramework extends JavaPlugin {
         long startupStartTimeMillis = System.currentTimeMillis();
         plugin = this;
 
+        initializeLuaClassScripting();
         initializeCoreSystems();
         registerListeners();
         registerCommands();
@@ -75,6 +79,12 @@ public final class RPGFramework extends JavaPlugin {
                         + (System.currentTimeMillis() - startupStartTimeMillis) + "ms",
                 ChatColor.GREEN
         );
+    }
+
+    private void initializeLuaClassScripting() {
+        LuaClassDefinitionRegistry registry = new LuaClassDefinitionRegistry(new LuaClassScriptEngine());
+        registry.loadAll(getClassLoader());
+        LuaClassConfigProvider.initialize(new LuaClassConfigProvider(registry));
     }
 
     private void initializeCoreSystems() {

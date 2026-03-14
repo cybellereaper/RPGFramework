@@ -3,12 +3,8 @@ package io.github.math0898.rpgframework;
 import io.github.math0898.rpgframework.classes.AbstractClass;
 import io.github.math0898.rpgframework.classes.Class;
 import io.github.math0898.rpgframework.classes.Classes;
-import io.github.math0898.rpgframework.classes.implementations.AssassinClass;
-import io.github.math0898.rpgframework.classes.implementations.BardClass;
-import io.github.math0898.rpgframework.classes.implementations.BerserkerClass;
+import io.github.math0898.rpgframework.classes.LuaScriptedClass;
 import io.github.math0898.rpgframework.classes.implementations.NoneClass;
-import io.github.math0898.rpgframework.classes.implementations.PaladinClass;
-import io.github.math0898.rpgframework.classes.implementations.PyromancerClass;
 import io.github.math0898.rpgframework.enemies.CustomMob;
 import io.github.math0898.rpgframework.items.EquipmentSlots;
 import io.github.math0898.rpgframework.items.ItemManager;
@@ -583,12 +579,8 @@ public class RpgPlayer {
 
     private Class createClassInstance(Classes selectedClass) {
         return switch (selectedClass) {
-            case BARD -> new BardClass(this);
-            case ASSASSIN -> new AssassinClass(this);
-            case BERSERKER -> new BerserkerClass(this);
-            case PALADIN -> new PaladinClass(this);
-            case PYROMANCER -> new PyromancerClass(this);
             case NONE -> new NoneClass(this);
+            default -> new LuaScriptedClass(this, selectedClass.name());
         };
     }
 

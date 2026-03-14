@@ -49,9 +49,9 @@ class AbstractClassTest {
 
         clazz.configureClassItems(Material.GHAST_TEAR, null, Material.GHAST_TEAR, Material.BLAZE_ROD);
 
-        assertEquals(0, clazz.classItemIndex(Material.GHAST_TEAR));
-        assertEquals(1, clazz.classItemIndex(Material.BLAZE_ROD));
-        assertEquals(-1, clazz.classItemIndex(Material.STICK));
+        assertTrue(clazz.classItemIndex(Material.GHAST_TEAR));
+        assertTrue(clazz.classItemIndex(Material.BLAZE_ROD));
+        assertFalse(clazz.classItemIndex(Material.STICK));
     }
 
     private static final class TestAbstractClass extends AbstractClass {
