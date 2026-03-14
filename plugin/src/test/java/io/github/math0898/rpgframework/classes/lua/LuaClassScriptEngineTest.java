@@ -3,6 +3,9 @@ package io.github.math0898.rpgframework.classes.lua;
 import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.junit.jupiter.api.Test;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.lib.jse.CoerceJavaToLua;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -70,5 +73,48 @@ class LuaClassScriptEngineTest {
                   cooldowns = { -1 }
                 }
                 """));
+    }
+
+    @Test
+    void runtimeContextSupportsScriptHelpersAndJavaApiMethods() {
+        LuaClassDefinition definition = engine.parse("""
+                return {
+                  classItems = { "GHAST_TEAR" },
+                  requiredArmor = {},
+                  cooldowns = { 10, 20, 30 },
+                  abilities = { TEST = 2 },
+                  isEffectWindowActive = function(clazz, abilityIndex, cooldownSeconds, activeWindowSeconds)
+                    return clazz:getRemainingCooldown(abilityIndex) >= (cooldownSeconds - activeWindowSeconds)
+                  end,
+                  onLeftClick = function(clazz)
+                    return clazz:isAbilityReady(clazz.abilities.TEST)
+                      and clazz:isEffectWindowActive(clazz.abilities.TEST, 20, 8)
+                  end
+                }
+                """);
+
+        TestLuaApi api = new TestLuaApi();
+        LuaTable runtimeContext = definition.createRuntimeContext(CoerceJavaToLua.coerce(api));
+        LuaValue result = definition.hook(runtimeContext, "onLeftClick").call(runtimeContext);
+
+        assertTrue(result.toboolean());
+        assertEquals(2, api.abilityCheckedAtIndex);
+        assertEquals(2, api.cooldownCheckedAtIndex);
+    }
+
+    private static final class TestLuaApi {
+
+        private int abilityCheckedAtIndex = -1;
+        private int cooldownCheckedAtIndex = -1;
+
+        public boolean isAbilityReady(int index) {
+            abilityCheckedAtIndex = index;
+            return index == 2;
+        }
+
+        public float getRemainingCooldown(int index) {
+            cooldownCheckedAtIndex = index;
+            return 15.0f;
+        }
     }
 }
