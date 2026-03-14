@@ -517,13 +517,4 @@ public class PyromancerClass extends AbstractClass {
         );
     }
 
-    /**
-     * Converts a duration in seconds to Minecraft ticks.
-     *
-     * @param seconds the duration in seconds
-     * @return the equivalent duration in ticks
-     */
-    private int secondsToTicks(int seconds) {
-        return seconds * 20;
     }
-}

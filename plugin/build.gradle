@@ -36,6 +36,7 @@ dependencies {
     compileOnly "com.gmail.filoghost.holographicdisplays:holographicdisplays-api:2.4.0"
     compileOnly 'com.github.decentsoftware-eu:decentholograms:2.8.9'
     implementation "org.jetbrains:annotations:23.0.0"
+    implementation "org.luaj:luaj-jse:3.0.1"
     compileOnly "uk.antiperson.stackmob:StackMob:5.8.2"
 }
 
