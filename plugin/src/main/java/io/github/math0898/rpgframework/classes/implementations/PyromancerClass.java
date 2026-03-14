@@ -8,4 +8,3 @@ public final class PyromancerClass extends LuaScriptedClass {
     public PyromancerClass(RpgPlayer player) {
         super(player, "PYROMANCER");
     }
-}
