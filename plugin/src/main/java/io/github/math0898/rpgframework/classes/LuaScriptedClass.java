@@ -21,42 +21,44 @@ public class LuaScriptedClass extends LuaBackedClass {
 
     private final String classKey;
     private final LuaClassDefinition definition;
+    private final org.luaj.vm2.LuaTable runtimeContext;
 
     public LuaScriptedClass(RpgPlayer player, String classKey) {
         super(player, classKey);
         this.classKey = classKey;
         this.definition = LuaClassConfigProvider.getInstance().getRequired(classKey);
+        this.runtimeContext = definition.createRuntimeContext(CoerceJavaToLua.coerce(this));
     }
 
     @Override
     public void passive() {
-        invokeHook("passive", CoerceJavaToLua.coerce(this));
+        invokeHook("passive");
     }
 
     @Override
     public void onLeftClickCast(PlayerInteractEvent event, Material type) {
-        invokeHook("onLeftClick", CoerceJavaToLua.coerce(this), CoerceJavaToLua.coerce(event));
+        invokeHook("onLeftClick", CoerceJavaToLua.coerce(event));
     }
 
     @Override
     public void onRightClickCast(PlayerInteractEvent event, Material type) {
-        invokeHook("onRightClick", CoerceJavaToLua.coerce(this), CoerceJavaToLua.coerce(event));
+        invokeHook("onRightClick", CoerceJavaToLua.coerce(event));
     }
 
     @Override
     public boolean onDeath() {
-        LuaValue result = invokeHook("onDeath", CoerceJavaToLua.coerce(this));
+        LuaValue result = invokeHook("onDeath");
         return result.isboolean() ? result.toboolean() : true;
     }
 
     @Override
     public void damaged(AdvancedDamageEvent event) {
-        invokeHook("onDamaged", CoerceJavaToLua.coerce(this), CoerceJavaToLua.coerce(event));
+        invokeHook("onDamaged", CoerceJavaToLua.coerce(event));
     }
 
     @Override
     public void attack(AdvancedDamageEvent event) {
-        invokeHook("onAttack", CoerceJavaToLua.coerce(this), CoerceJavaToLua.coerce(event));
+        invokeHook("onAttack", CoerceJavaToLua.coerce(event));
     }
 
     @Override
@@ -76,6 +78,10 @@ public class LuaScriptedClass extends LuaBackedClass {
 
     public float getRemainingAbilityCooldown(int cooldownIndex) {
         return getCooldown(cooldownIndex) == null ? 0.0f : getCooldown(cooldownIndex).getRemaining();
+    }
+
+    public float getRemainingCooldown(int cooldownIndex) {
+        return getRemainingAbilityCooldown(cooldownIndex);
     }
 
     public boolean hasRequiredArmorSet() {
@@ -125,17 +131,21 @@ public class LuaScriptedClass extends LuaBackedClass {
     }
 
     private LuaValue invokeHook(String hookName, LuaValue... args) {
-        LuaValue hook = definition.hook(hookName);
+        LuaValue hook = definition.hook(runtimeContext, hookName);
         if (hook.isnil()) {
             return LuaValue.NIL;
         }
 
+        LuaValue[] finalArgs = new LuaValue[args.length + 1];
+        finalArgs[0] = runtimeContext;
+        System.arraycopy(args, 0, finalArgs, 1, args.length);
+
         try {
-            return switch (args.length) {
+            return switch (finalArgs.length) {
                 case 0 -> hook.call();
-                case 1 -> hook.call(args[0]);
-                case 2 -> hook.call(args[0], args[1]);
-                default -> hook.invoke(LuaValue.varargsOf(args)).arg1();
+                case 1 -> hook.call(finalArgs[0]);
+                case 2 -> hook.call(finalArgs[0], finalArgs[1]);
+                default -> hook.invoke(LuaValue.varargsOf(finalArgs)).arg1();
             };
         } catch (RuntimeException exception) {
             RPGFramework.console("Lua hook failed for " + classKey + "." + hookName + ": " + exception.getMessage(), ChatColor.RED);

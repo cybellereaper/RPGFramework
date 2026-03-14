@@ -4,6 +4,7 @@ import io.github.math0898.rpgframework.classes.lua.LuaClassDefinition;
 import io.github.math0898.rpgframework.classes.lua.LuaClassScriptEngine;
 import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
