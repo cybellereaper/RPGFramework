@@ -22,6 +22,17 @@ class LuaClassDefinitionRegistryTest {
         assertDefinitionHasHook(registry, "PYROMANCER", "onAttack");
     }
 
+    @Test
+    void loadAllIncludesBardDefinition() {
+        LuaClassDefinitionRegistry registry = new LuaClassDefinitionRegistry(new LuaClassScriptEngine());
+
+        registry.loadAll(getClass().getClassLoader());
+
+        LuaClassDefinition bard = registry.get("BARD");
+        assertNotNull(bard, "Missing class definition for BARD");
+        assertTrue(bard.hook("onRightClick").isfunction(), "Missing onRightClick hook for BARD");
+    }
+
     private void assertDefinitionHasHook(LuaClassDefinitionRegistry registry, String classKey, String hookName) {
         LuaClassDefinition definition = registry.get(classKey);
         assertNotNull(definition, "Missing class definition for " + classKey);
