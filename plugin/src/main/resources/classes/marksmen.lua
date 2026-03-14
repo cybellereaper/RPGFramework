@@ -1,5 +1,5 @@
 return {
-  id = "gunslinger",
+  id = "marksmen",
 
   classItems = { "CROSSBOW", "BOW" },
 
