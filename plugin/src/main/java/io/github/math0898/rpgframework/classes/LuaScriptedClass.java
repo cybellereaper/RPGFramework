@@ -3,14 +3,22 @@ package io.github.math0898.rpgframework.classes;
 import io.github.math0898.rpgframework.RPGFramework;
 import io.github.math0898.rpgframework.RpgPlayer;
 import io.github.math0898.rpgframework.classes.lua.LuaClassDefinition;
+import io.github.math0898.rpgframework.damage.DamageResistance;
 import io.github.math0898.rpgframework.damage.DamageType;
 import io.github.math0898.rpgframework.damage.events.AdvancedDamageEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.SmallFireball;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
+import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.CoerceJavaToLua;
 
@@ -21,7 +29,7 @@ public class LuaScriptedClass extends LuaBackedClass {
 
     private final String classKey;
     private final LuaClassDefinition definition;
-    private final org.luaj.vm2.LuaTable runtimeContext;
+    private final LuaTable runtimeContext;
 
     public LuaScriptedClass(RpgPlayer player, String classKey) {
         super(player, classKey);
@@ -88,6 +96,13 @@ public class LuaScriptedClass extends LuaBackedClass {
         return correctArmor();
     }
 
+    public String getCastItem(PlayerInteractEvent event) {
+        if (event == null || event.getItem() == null) {
+            return "";
+        }
+        return event.getItem().getType().name();
+    }
+
     public void sendClassMessage(String message) {
         send(message);
     }
@@ -99,8 +114,113 @@ public class LuaScriptedClass extends LuaBackedClass {
         }
     }
 
+    public LuaTable getNearbyEnemyCasterTargets(double dx, double dy, double dz) {
+        LuaTable table = new LuaTable();
+        List<LivingEntity> entities = getPlayer().nearbyEnemyCasterTargets(dx, dy, dz);
+        for (int i = 0; i < entities.size(); i++) {
+            table.set(i + 1, CoerceJavaToLua.coerce(entities.get(i)));
+        }
+        return table;
+    }
+
+    public void playSound(String soundName, float volume, float pitch) {
+        Sound sound = parseEnum(Sound.class, soundName);
+        if (sound == null) {
+            return;
+        }
+
+        Player player = getPlayer().getBukkitPlayer();
+        player.getWorld().playSound(player.getLocation(), sound, volume, pitch);
+    }
+
+    public void spawnParticle(String particleName, int count, double offsetX, double offsetY, double offsetZ, double extra) {
+        Particle particle = parseEnum(Particle.class, particleName);
+        if (particle == null) {
+            return;
+        }
+
+        Player player = getPlayer().getBukkitPlayer();
+        player.getWorld().spawnParticle(
+                particle,
+                player.getLocation().add(0, 1.0, 0),
+                count,
+                offsetX,
+                offsetY,
+                offsetZ,
+                extra
+        );
+    }
+
+    public void spawnParticleAtEntity(LivingEntity entity, String particleName, int count, double offsetX, double offsetY, double offsetZ, double extra) {
+        if (entity == null) {
+            return;
+        }
+
+        Particle particle = parseEnum(Particle.class, particleName);
+        if (particle == null) {
+            return;
+        }
+
+        entity.getWorld().spawnParticle(
+                particle,
+                entity.getLocation().add(0, 1.0, 0),
+                count,
+                offsetX,
+                offsetY,
+                offsetZ,
+                extra
+        );
+    }
+
+    public void launchSmallFireball(double horizontalOffset, double speed) {
+        Player player = getPlayer().getBukkitPlayer();
+        Vector forward = player.getEyeLocation().getDirection().normalize();
+        Vector sideways = calculatePerpendicularHorizontalVector(forward);
+
+        Vector velocity = forward.clone()
+                .add(sideways.clone().multiply(horizontalOffset))
+                .normalize()
+                .multiply(speed);
+
+        SmallFireball fireball = player.launchProjectile(SmallFireball.class, velocity);
+        fireball.setIsIncendiary(true);
+    }
+
+    public void heal(double amount) {
+        getPlayer().heal(amount);
+    }
+
+    public void setFireTicks(int ticks) {
+        getPlayer().getBukkitPlayer().setFireTicks(Math.max(0, ticks));
+    }
+
+    public void extinguishAndImmuneFire(AdvancedDamageEvent event) {
+        if (event == null) {
+            return;
+        }
+
+        event.setResistance(DamageType.FIRE, DamageResistance.IMMUNITY);
+        event.getEntity().setFireTicks(0);
+    }
+
+    public void reducePrimaryDamage(AdvancedDamageEvent event, double amount) {
+        if (event == null || amount <= 0) {
+            return;
+        }
+
+        event.addDamage(-amount, event.getPrimaryDamage());
+    }
+
+    public void addFireDamage(AdvancedDamageEvent event, double amount) {
+        if (event == null || amount == 0) {
+            return;
+        }
+
+        event.addDamage(amount, DamageType.FIRE);
+    }
+
     public void addPoisonedBladeEffects(AdvancedDamageEvent event, int durationSeconds) {
-        if (!(event.getEntity() instanceof org.bukkit.entity.LivingEntity target)) {
+        if (!(event.getEntity() instanceof LivingEntity target)) {
             return;
         }
 
@@ -115,7 +235,7 @@ public class LuaScriptedClass extends LuaBackedClass {
     }
 
     public boolean targetIsPlayer(AdvancedDamageEvent event) {
-        return event.getEntity() instanceof org.bukkit.entity.Player;
+        return event.getEntity() instanceof Player;
     }
 
     public void addSlashDamage(AdvancedDamageEvent event, double amount) {
@@ -150,6 +270,26 @@ public class LuaScriptedClass extends LuaBackedClass {
         } catch (RuntimeException exception) {
             RPGFramework.console("Lua hook failed for " + classKey + "." + hookName + ": " + exception.getMessage(), ChatColor.RED);
             return LuaValue.NIL;
+        }
+    }
+
+    private Vector calculatePerpendicularHorizontalVector(Vector direction) {
+        Vector perpendicular = direction.clone().crossProduct(new Vector(0, 1, 0));
+        if (perpendicular.lengthSquared() == 0) {
+            return new Vector(1, 0, 0);
+        }
+        return perpendicular.normalize();
+    }
+
+    private <E extends Enum<E>> E parseEnum(java.lang.Class<E> enumType, String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return null;
+        }
+
+        try {
+            return Enum.valueOf(enumType, rawValue.trim().toUpperCase());
+        } catch (IllegalArgumentException ignored) {
+            return null;
         }
     }
 }

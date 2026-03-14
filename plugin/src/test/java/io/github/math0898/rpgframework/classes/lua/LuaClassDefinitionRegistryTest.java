@@ -18,6 +18,8 @@ class LuaClassDefinitionRegistryTest {
         assertDefinitionHasHook(registry, "BERSERKER", "onLeftClick");
         assertDefinitionHasHook(registry, "PALADIN", "onRightClick");
         assertDefinitionHasHook(registry, "PYROMANCER", "onDeath");
+        assertDefinitionHasHook(registry, "PYROMANCER", "onDamaged");
+        assertDefinitionHasHook(registry, "PYROMANCER", "onAttack");
     }
 
     private void assertDefinitionHasHook(LuaClassDefinitionRegistry registry, String classKey, String hookName) {
