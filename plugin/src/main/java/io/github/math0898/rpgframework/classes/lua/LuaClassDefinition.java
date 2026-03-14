@@ -63,7 +63,9 @@ public final class LuaClassDefinition {
         if (runtimeContext == null) {
             return LuaValue.NIL;
         }
-        return runtimeContext.get(functionName);
+
+        LuaValue hook = runtimeContext.rawget(functionName);
+        return hook.isfunction() ? hook : LuaValue.NIL;
     }
 
     public LuaTable createRuntimeContext(LuaValue javaApi) {

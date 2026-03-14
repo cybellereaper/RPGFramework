@@ -238,6 +238,34 @@ public class LuaScriptedClass extends LuaBackedClass {
         return event.getEntity() instanceof Player;
     }
 
+
+    public void addDamage(AdvancedDamageEvent event, double amount, Object damageTypeValue) {
+        if (event == null || amount == 0 || damageTypeValue == null) {
+            return;
+        }
+
+        DamageType damageType = resolveDamageType(damageTypeValue);
+        if (damageType == null) {
+            return;
+        }
+
+        event.addDamage(amount, damageType);
+    }
+
+    public void setResistance(AdvancedDamageEvent event, Object damageTypeValue, Object resistanceValue) {
+        if (event == null || damageTypeValue == null || resistanceValue == null) {
+            return;
+        }
+
+        DamageType damageType = resolveDamageType(damageTypeValue);
+        DamageResistance resistance = resolveDamageResistance(resistanceValue);
+        if (damageType == null || resistance == null) {
+            return;
+        }
+
+        event.setResistance(damageType, resistance);
+    }
+
     public void addSlashDamage(AdvancedDamageEvent event, double amount) {
         event.addDamage(amount, DamageType.SLASH);
     }
@@ -279,6 +307,27 @@ public class LuaScriptedClass extends LuaBackedClass {
             return new Vector(1, 0, 0);
         }
         return perpendicular.normalize();
+    }
+
+
+    private DamageType resolveDamageType(Object value) {
+        if (value instanceof DamageType damageType) {
+            return damageType;
+        }
+        if (value instanceof String rawDamageType) {
+            return parseEnum(DamageType.class, rawDamageType);
+        }
+        return null;
+    }
+
+    private DamageResistance resolveDamageResistance(Object value) {
+        if (value instanceof DamageResistance damageResistance) {
+            return damageResistance;
+        }
+        if (value instanceof String rawResistance) {
+            return parseEnum(DamageResistance.class, rawResistance);
+        }
+        return null;
     }
 
     private <E extends Enum<E>> E parseEnum(java.lang.Class<E> enumType, String rawValue) {
