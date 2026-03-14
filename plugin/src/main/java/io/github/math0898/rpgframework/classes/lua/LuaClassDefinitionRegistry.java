@@ -1,8 +1,5 @@
 package io.github.math0898.rpgframework.classes.lua;
 
-import io.github.math0898.rpgframework.RPGFramework;
-import org.bukkit.ChatColor;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +42,7 @@ public final class LuaClassDefinitionRegistry {
             String script = readResource(classLoader, path);
             definitionsByClassKey.put(classKey, scriptEngine.parse(script));
         } catch (RuntimeException exception) {
-            RPGFramework.console("Failed to parse Lua class script at " + path + ": " + exception.getMessage(), ChatColor.RED);
+            throw new IllegalStateException("Failed to load Lua class definition for " + classKey + " at " + path, exception);
         }
     }
 

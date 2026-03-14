@@ -3,6 +3,8 @@ return {
 
   classItems = { "NOTE_BLOCK" },
 
+  requiredArmor = {},
+
   cooldowns = { 30, 300 },
 
   abilities = {
