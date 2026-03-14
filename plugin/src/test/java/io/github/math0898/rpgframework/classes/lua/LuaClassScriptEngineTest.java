@@ -70,6 +70,59 @@ class LuaClassScriptEngineTest {
     }
 
     @Test
+    void runtimeContextSupportsResistanceMappingWithStringEnums() {
+        LuaClassDefinition definition = engine.parse("""
+                return {
+                  classItems = { "GOLDEN_SHOVEL" },
+                  requiredArmor = {},
+                  cooldowns = { 1 },
+                  constants = { PALADIN_RESISTANCES = { "HOLY", "IMPACT" } },
+                  onDamaged = function(clazz, event)
+                    for i = 1, #clazz.constants.PALADIN_RESISTANCES do
+                      clazz:setResistance(event, clazz.constants.PALADIN_RESISTANCES[i], "RESISTANCE")
+                    end
+                  end
+                }
+                """);
+
+        TestLuaApi api = new TestLuaApi();
+        LuaTable runtimeContext = definition.createRuntimeContext(CoerceJavaToLua.coerce(api));
+        Object event = new Object();
+
+        definition.hook(runtimeContext, "onDamaged").call(runtimeContext, CoerceJavaToLua.coerce(event));
+
+        assertEquals(2, api.resistanceCalls);
+        assertEquals(event, api.lastResistanceEvent);
+        assertEquals("IMPACT", api.lastDamageType);
+        assertEquals("RESISTANCE", api.lastResistanceType);
+    }
+
+    @Test
+    void runtimeContextSupportsAddDamageWithPrimaryDamageTypeObject() {
+        LuaClassDefinition definition = engine.parse("""
+                return {
+                  classItems = { "GOLDEN_SHOVEL" },
+                  requiredArmor = {},
+                  cooldowns = { 1 },
+                  constants = { ATTACK_DAMAGE_REDUCTION = 2.5 },
+                  onAttack = function(clazz, event)
+                    clazz:addDamage(event, -clazz.constants.ATTACK_DAMAGE_REDUCTION, event:getPrimaryDamage())
+                  end
+                }
+                """);
+
+        TestLuaApi api = new TestLuaApi();
+        LuaTable runtimeContext = definition.createRuntimeContext(CoerceJavaToLua.coerce(api));
+        TestDamageEvent event = new TestDamageEvent("UNSPECIFIED");
+
+        definition.hook(runtimeContext, "onAttack").call(runtimeContext, CoerceJavaToLua.coerce(event));
+
+        assertEquals(event, api.lastDamageEvent);
+        assertEquals(-2.5d, api.lastDamageAmount);
+        assertEquals("UNSPECIFIED", api.lastDamageType);
+    }
+
+    @Test
     void parseRejectsInvalidMaterialName() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> engine.parse("""
                 return {
@@ -124,6 +177,12 @@ class LuaClassScriptEngineTest {
 
         private int abilityCheckedAtIndex = -1;
         private int cooldownCheckedAtIndex = -1;
+        private int resistanceCalls;
+        private Object lastResistanceEvent;
+        private Object lastDamageEvent;
+        private double lastDamageAmount;
+        private String lastDamageType;
+        private String lastResistanceType;
 
         public boolean isAbilityReady(int index) {
             abilityCheckedAtIndex = index;
@@ -133,6 +192,31 @@ class LuaClassScriptEngineTest {
         public float getRemainingCooldown(int index) {
             cooldownCheckedAtIndex = index;
             return 15.0f;
+        }
+
+        public void setResistance(Object event, String damageType, String resistance) {
+            resistanceCalls++;
+            lastResistanceEvent = event;
+            lastDamageType = damageType;
+            lastResistanceType = resistance;
+        }
+
+        public void addDamage(Object event, double amount, Object damageType) {
+            lastDamageEvent = event;
+            lastDamageAmount = amount;
+            lastDamageType = String.valueOf(damageType);
+        }
+    }
+
+    private static final class TestDamageEvent {
+        private final String primaryDamage;
+
+        private TestDamageEvent(String primaryDamage) {
+            this.primaryDamage = primaryDamage;
+        }
+
+        public String getPrimaryDamage() {
+            return primaryDamage;
         }
     }
 }

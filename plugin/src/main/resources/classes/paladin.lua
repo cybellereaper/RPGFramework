@@ -168,7 +168,7 @@ return {
     local resistances = clazz.constants.PALADIN_RESISTANCES
 
     for i = 1, #resistances do
-      event:setResistance(resistances[i], "RESISTANCE")
+      clazz:setResistance(event, resistances[i], "RESISTANCE")
     end
   end,
 
