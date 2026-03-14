@@ -25,32 +25,20 @@ public final class LuaClassScriptEngine {
 
     public LuaClassDefinition parse(String scriptText) {
         Globals globals = JsePlatform.standardGlobals();
-        LuaValue result = globals.load(scriptText, "class-script").call();
+        LuaTable classTable = expectTable(globals.load(scriptText, "class-script").call(), "Script must return a table");
 
-        LuaTable classTable = expectTable(result, "Script must return a table");
         String id = classTable.get(KEY_ID).optjstring("lua-class");
+        Set<Material> classItems = parseClassItems(expectTable(classTable.get(KEY_CLASS_ITEMS), "Missing 'classItems' table"));
+        EnumMap<EquipmentSlot, Material> requiredArmor = parseRequiredArmor(
+                expectTable(classTable.get(KEY_REQUIRED_ARMOR), "Missing 'requiredArmor' table")
+        );
+        int[] cooldowns = parseCooldowns(expectTable(classTable.get(KEY_COOLDOWNS), "Missing 'cooldowns' table"));
 
-        Set<Material> classItems = parseClassItems(expectTable(
-                classTable.get(KEY_CLASS_ITEMS),
-                "Missing 'classItems' table"
-        ));
-
-        EnumMap<EquipmentSlot, Material> requiredArmor = parseRequiredArmor(expectTable(
-                classTable.get(KEY_REQUIRED_ARMOR),
-                "Missing 'requiredArmor' table"
-        ));
-
-        int[] cooldowns = parseCooldowns(expectTable(
-                classTable.get(KEY_COOLDOWNS),
-                "Missing 'cooldowns' table"
-        ));
-
-        return new LuaClassDefinition(id, classItems, requiredArmor, cooldowns);
+        return new LuaClassDefinition(id, classItems, requiredArmor, cooldowns, classTable);
     }
 
     private Set<Material> parseClassItems(LuaTable itemsTable) {
         Set<Material> materials = EnumSet.noneOf(Material.class);
-
         for (int i = 1; ; i++) {
             LuaValue value = itemsTable.get(i);
             if (value.isnil()) {
@@ -58,7 +46,6 @@ public final class LuaClassScriptEngine {
             }
             materials.add(resolveEnum(Material.class, value.checkjstring(), "class item"));
         }
-
         return materials;
     }
 
@@ -71,32 +58,22 @@ public final class LuaClassScriptEngine {
         return requiredArmor;
     }
 
-    private void putArmor(
-            LuaTable armorTable,
-            EnumMap<EquipmentSlot, Material> requiredArmor,
-            String luaKey,
-            EquipmentSlot slot
-    ) {
+    private void putArmor(LuaTable armorTable, EnumMap<EquipmentSlot, Material> requiredArmor, String luaKey, EquipmentSlot slot) {
         LuaValue value = armorTable.get(luaKey);
-        if (value.isnil()) {
-            return;
+        if (!value.isnil()) {
+            requiredArmor.put(slot, resolveEnum(Material.class, value.checkjstring(), "armor material"));
         }
-
-        requiredArmor.put(slot, resolveEnum(Material.class, value.checkjstring(), "armor material"));
     }
 
     private int[] parseCooldowns(LuaTable cooldownTable) {
-        int size = cooldownTable.length();
-        int[] cooldowns = new int[size];
-
-        for (int i = 1; i <= size; i++) {
+        int[] cooldowns = new int[cooldownTable.length()];
+        for (int i = 1; i <= cooldownTable.length(); i++) {
             int cooldown = cooldownTable.get(i).checkint();
             if (cooldown < 0) {
                 throw new IllegalArgumentException("Cooldown values must be non-negative");
             }
             cooldowns[i - 1] = cooldown;
         }
-
         return cooldowns;
     }
 

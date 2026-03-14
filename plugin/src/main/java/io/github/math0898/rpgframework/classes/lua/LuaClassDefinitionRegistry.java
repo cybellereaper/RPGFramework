@@ -8,10 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public final class LuaClassDefinitionRegistry {
 
@@ -34,24 +32,21 @@ public final class LuaClassDefinitionRegistry {
         definitionsByClassKey.clear();
 
         for (Map.Entry<String, String> entry : RESOURCE_BY_CLASS_KEY.entrySet()) {
-            String classKey = entry.getKey();
-            String path = entry.getValue();
-
-            try {
-                String script = readResource(classLoader, path);
-                LuaClassDefinition definition = scriptEngine.parse(script);
-                definitionsByClassKey.put(classKey, definition);
-            } catch (RuntimeException exception) {
-                RPGFramework.console(
-                        "Failed to parse Lua class definition at " + path + ": " + exception.getMessage(),
-                        ChatColor.RED
-                );
-            }
+            loadDefinition(classLoader, entry.getKey(), entry.getValue());
         }
     }
 
     public LuaClassDefinition get(String classKey) {
         return definitionsByClassKey.get(classKey);
+    }
+
+    private void loadDefinition(ClassLoader classLoader, String classKey, String path) {
+        try {
+            String script = readResource(classLoader, path);
+            definitionsByClassKey.put(classKey, scriptEngine.parse(script));
+        } catch (RuntimeException exception) {
+            RPGFramework.console("Failed to parse Lua class script at " + path + ": " + exception.getMessage(), ChatColor.RED);
+        }
     }
 
     private String readResource(ClassLoader classLoader, String path) {

@@ -33,6 +33,21 @@ class LuaClassScriptEngineTest {
         assertArrayEquals(new int[]{30, 60, 300}, definition.cooldownSeconds());
     }
 
+
+    @Test
+    void parseRetainsCallableHookFunctions() {
+        LuaClassDefinition definition = engine.parse("""
+                return {
+                  classItems = { "GHAST_TEAR" },
+                  requiredArmor = {},
+                  cooldowns = { 1 },
+                  onDeath = function(clazz) return false end
+                }
+                """);
+
+        assertTrue(definition.hook("onDeath").isfunction());
+    }
+
     @Test
     void parseRejectsInvalidMaterialName() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> engine.parse("""
