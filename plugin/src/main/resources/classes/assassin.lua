@@ -19,29 +19,69 @@ return {
   },
 
   constants = {
-    PASSIVE_SPEED_SECONDS = 21,
-    INVISIBILITY_SECONDS = 10,
-    HEROIC_DODGE_SPEED_SECONDS = 10,
-    HEROIC_DODGE_TRIGGER_REMAINING = 290,
-    INVISIBILITY_TRIGGER_REMAINING = 20,
+    ARMOR_REQUIRED_MESSAGE = "Use full leather armor to use assassin abilities.",
+
+    INVISIBILITY_DURATION_SECONDS = 10,
+    POISONED_BLADE_EFFECT_DURATION_SECONDS = 10,
+    HEROIC_DODGE_SPEED_DURATION_SECONDS = 10,
+    PASSIVE_SPEED_DURATION_SECONDS = 21,
+
+    INVISIBILITY_AMPLIFIER = 1,
+    HEROIC_DODGE_SPEED_AMPLIFIER = 2,
+    PASSIVE_SPEED_AMPLIFIER = 1,
+    POISONED_BLADE_EFFECT_AMPLIFIER = 0,
+
+    PLAYER_BONUS_DAMAGE = 5.0,
+    NON_PLAYER_BONUS_DAMAGE = 10.0,
     RANDOM_DODGE_CHANCE = 0.10,
-    POISONED_BLADE_TRIGGER_REMAINING = 50,
-    POISONED_BLADE_SECONDS = 10,
-    SLASH_DAMAGE_VS_PLAYERS = 5.0,
-    SLASH_DAMAGE_VS_MOBS = 10.0
+
+    HEROIC_DODGE_IMMUNITY_THRESHOLD = 290,
+    INVISIBILITY_IMMUNITY_THRESHOLD = 20,
+    POISONED_BLADE_ACTIVE_THRESHOLD = 50,
+
+    POISONED_BLADE_EFFECTS = { "BLINDNESS", "POISON", "SLOWNESS" },
+
+    POISONED_BLADE_CAST_MESSAGE = "&aYou've used poisoned blade!",
+    INVISIBILITY_CAST_MESSAGE = "&aYou've used invisibility!",
+    HEROIC_DODGE_CAST_MESSAGE = "&aYou've used &6Heroic Dodge&a!"
   },
 
-  passive = function(clazz)
-    if not clazz:hasRequiredArmorSet() then
-      return
+  shouldNegateIncomingDamage = function(clazz, heroicDodgeRemaining, invisibilityRemaining, dodgeRoll)
+    return heroicDodgeRemaining >= clazz.constants.HEROIC_DODGE_IMMUNITY_THRESHOLD
+      or invisibilityRemaining >= clazz.constants.INVISIBILITY_IMMUNITY_THRESHOLD
+      or dodgeRoll <= clazz.constants.RANDOM_DODGE_CHANCE
+  end,
+
+  isPoisonedBladeActive = function(clazz)
+    return clazz:getRemainingCooldown(clazz.abilities.POISONED_BLADE) >= clazz.constants.POISONED_BLADE_ACTIVE_THRESHOLD
+  end,
+
+  bonusDamage = function(clazz, target)
+    if target:getType() == "PLAYER" then
+      return clazz.constants.PLAYER_BONUS_DAMAGE
     end
 
-    clazz:addPotion("SPEED", clazz.constants.PASSIVE_SPEED_SECONDS, 1, true, false)
+    return clazz.constants.NON_PLAYER_BONUS_DAMAGE
+  end,
+
+  canUseAbilities = function(clazz)
+    if clazz:correctArmor() then
+      return true
+    end
+
+    clazz:sendClassMessage(clazz.constants.ARMOR_REQUIRED_MESSAGE)
+    return false
+  end,
+
+  applyPoisonedBladeEffects = function(clazz, target)
+    local effects = clazz.constants.POISONED_BLADE_EFFECTS
+    for i = 1, #effects do
+      target:addPotion(effects[i], clazz.constants.POISONED_BLADE_EFFECT_DURATION_SECONDS, clazz.constants.POISONED_BLADE_EFFECT_AMPLIFIER, false, false)
+    end
   end,
 
   onLeftClick = function(clazz, event)
-    if not clazz:hasRequiredArmorSet() then
-      clazz:sendClassMessage("Use full leather armor to use assassin abilities.")
+    if not clazz:canUseAbilities() then
       return
     end
 
@@ -49,13 +89,12 @@ return {
       return
     end
 
-    clazz:sendClassMessage("You've used poisoned blade!")
+    clazz:sendClassMessage(clazz.constants.POISONED_BLADE_CAST_MESSAGE)
     clazz:restartAbilityCooldown(clazz.abilities.POISONED_BLADE)
   end,
 
   onRightClick = function(clazz, event)
-    if not clazz:hasRequiredArmorSet() then
-      clazz:sendClassMessage("Use full leather armor to use assassin abilities.")
+    if not clazz:canUseAbilities() then
       return
     end
 
@@ -63,13 +102,13 @@ return {
       return
     end
 
-    clazz:sendClassMessage("You've used invisibility!")
-    clazz:addPotion("INVISIBILITY", clazz.constants.INVISIBILITY_SECONDS, 1, false, false)
+    clazz:sendClassMessage(clazz.constants.INVISIBILITY_CAST_MESSAGE)
+    clazz:addPotion("INVISIBILITY", clazz.constants.INVISIBILITY_DURATION_SECONDS, clazz.constants.INVISIBILITY_AMPLIFIER, false, false)
     clazz:restartAbilityCooldown(clazz.abilities.INVISIBILITY)
   end,
 
   onDeath = function(clazz)
-    if not clazz:hasRequiredArmorSet() then
+    if not clazz:correctArmor() then
       return true
     end
 
@@ -77,37 +116,50 @@ return {
       return true
     end
 
-    clazz:sendClassMessage("You've used Heroic Dodge!")
-    clazz:addPotion("SPEED", clazz.constants.HEROIC_DODGE_SPEED_SECONDS, 2, false, false)
+    clazz:sendClassMessage(clazz.constants.HEROIC_DODGE_CAST_MESSAGE)
+    clazz:playSound("ITEM_TOTEM_USE", 0.8, 1.0)
+    clazz:addPotion("SPEED", clazz.constants.HEROIC_DODGE_SPEED_DURATION_SECONDS, clazz.constants.HEROIC_DODGE_SPEED_AMPLIFIER, false, false)
     clazz:restartAbilityCooldown(clazz.abilities.HEROIC_DODGE)
+
     return false
   end,
 
   onDamaged = function(clazz, event)
-    local heroicDodgeRemaining = clazz:getRemainingAbilityCooldown(clazz.abilities.HEROIC_DODGE)
-    local invisibilityRemaining = clazz:getRemainingAbilityCooldown(clazz.abilities.INVISIBILITY)
-    local dodgeRoll = clazz:randomUnit()
+    local dodgeRoll = math.random()
 
-    if heroicDodgeRemaining >= clazz.constants.HEROIC_DODGE_TRIGGER_REMAINING
-        or invisibilityRemaining >= clazz.constants.INVISIBILITY_TRIGGER_REMAINING
-        or dodgeRoll <= clazz.constants.RANDOM_DODGE_CHANCE then
-      clazz:cancelDamageEvent(event)
+    if clazz:shouldNegateIncomingDamage(
+      clazz:getRemainingCooldown(clazz.abilities.HEROIC_DODGE),
+      clazz:getRemainingCooldown(clazz.abilities.INVISIBILITY),
+      dodgeRoll
+    ) then
+      event:setCancelled(true)
     end
   end,
 
   onAttack = function(clazz, event)
-    if not clazz:isPrimaryPhysical(event) then
+    local target = event:getEntity()
+    if target == nil then
       return
     end
 
-    if clazz:targetIsPlayer(event) then
-      clazz:addSlashDamage(event, clazz.constants.SLASH_DAMAGE_VS_PLAYERS)
-    else
-      clazz:addSlashDamage(event, clazz.constants.SLASH_DAMAGE_VS_MOBS)
+    if not event:getPrimaryDamage():isPhysical() then
+      return
     end
 
-    if clazz:getRemainingAbilityCooldown(clazz.abilities.POISONED_BLADE) >= clazz.constants.POISONED_BLADE_TRIGGER_REMAINING then
-      clazz:addPoisonedBladeEffects(event, clazz.constants.POISONED_BLADE_SECONDS)
+    clazz:addDamage(event, clazz:bonusDamage(target), "SLASH")
+
+    if not clazz:isPoisonedBladeActive() then
+      return
     end
+
+    clazz:applyPoisonedBladeEffects(target)
+  end,
+
+  passive = function(clazz)
+    if not clazz:correctArmor() then
+      return
+    end
+
+    clazz:addPotion("SPEED", clazz.constants.PASSIVE_SPEED_DURATION_SECONDS, clazz.constants.PASSIVE_SPEED_AMPLIFIER, true, false)
   end
 }
